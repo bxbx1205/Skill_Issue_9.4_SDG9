@@ -1,0 +1,166 @@
+/* ========================================
+   FLEET HEADER
+   ======================================== */
+
+.fleet-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--steel-100);
+  padding: 2rem 0 1.5rem;
+  position: relative;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+/* ========================================
+   TITLE SECTION
+   ======================================== */
+
+.header-left {
+  flex: 1;
+}
+
+.system-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.title-main {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--cyan-500);
+  text-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+.title-sub {
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: var(--steel-300);
+}
+
+.system-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-label {
+  color: var(--steel-300);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+
+.info-value {
+  color: var(--steel-400);
+  font-weight: 600;
+}
+
+.info-divider {
+  color: var(--steel-200);
+}
+
+/* ========================================
+   METRICS SECTION
+   ======================================== */
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.fleet-metrics {
+  display: flex;
+  gap: 2rem;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 100px;
+}
+
+.metric-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--steel-300);
+  text-transform: uppercase;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.metric-critical .metric-value {
+  animation: pulse-critical 1.5s infinite;
+}
+
+.metric-warning .metric-value {
+  animation: pulse-warning 2s infinite;
+}
+
+/* ========================================
+   BORDER EFFECT
+   ======================================== */
+
+.header-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--cyan-500) 50%,
+    transparent
+  );
+  opacity: 0.3;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 1024px) {
+  .header-content {
+    flex-direction: column;
+  }
+  
+  .fleet-metrics {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .title-main {
+    font-size: 1.5rem;
+  }
+  
+  .fleet-metrics {
+    gap: 1rem;
+  }
+  
+  .metric {
+    min-width: 80px;
+  }
+}

@@ -1,0 +1,86 @@
+/* ========================================
+   GAUGE COMPONENT
+   ======================================== */
+
+.gauge-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--steel-100);
+  border-radius: 2px;
+  padding: 1rem;
+}
+
+.gauge-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--steel-300);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.gauge {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+}
+
+.gauge-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Value display centered in gauge */
+.gauge-value {
+  position: absolute;
+  bottom: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.value-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--steel-400);
+}
+
+.value-unit {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--steel-300);
+}
+
+/* Threshold markers */
+.gauge-markers {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 180px;
+  margin-top: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.marker {
+  font-size: 0.625rem;
+  font-family: var(--font-data);
+  color: var(--steel-300);
+  font-weight: 500;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 500px) {
+  .value-number {
+    font-size: 1.5rem;
+  }
+}

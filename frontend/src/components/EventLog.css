@@ -1,0 +1,104 @@
+/* ========================================
+   EVENT LOG
+   ======================================== */
+
+.event-log {
+  background: var(--bg-secondary);
+  border: 1px solid var(--steel-100);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.event-count {
+  padding: 0.25rem 0.75rem;
+  background: var(--steel-100);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--steel-400);
+}
+
+/* ========================================
+   EVENTS LIST
+   ======================================== */
+
+.events-list {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.event-item {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg-primary);
+  border-radius: 2px;
+  border-left: 2px solid var(--steel-100);
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.event-item:hover {
+  background: var(--bg-tertiary);
+  border-left-color: var(--cyan-500);
+}
+
+/* Severity-based border */
+.severity-critical {
+  border-left-color: var(--red-500);
+}
+
+.severity-warning {
+  border-left-color: var(--amber-400);
+}
+
+.severity-info {
+  border-left-color: var(--cyan-500);
+}
+
+.event-timestamp {
+  font-weight: 500;
+  color: var(--steel-300);
+  font-size: 0.625rem;
+}
+
+.event-machine {
+  font-weight: 600;
+  color: var(--cyan-500);
+  font-size: 0.625rem;
+  letter-spacing: 0.05em;
+  display: none;
+}
+
+.event-message {
+  color: var(--steel-400);
+  line-height: 1.4;
+  grid-column: 2;
+}
+
+.event-severity {
+  font-size: 0.5rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (min-width: 768px) {
+  .event-item {
+    grid-template-columns: 80px 120px 1fr auto;
+  }
+  
+  .event-machine {
+    display: block;
+  }
+  
+  .event-message {
+    grid-column: 3;
+  }
+}

@@ -1,0 +1,190 @@
+/* ========================================
+   MACHINE CARD
+   ======================================== */
+
+.machine-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--steel-100);
+  border-radius: 4px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Status-based left border accent */
+.machine-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  transition: all 0.3s ease;
+}
+
+.machine-card.status-operational::before {
+  background: var(--green-500);
+}
+
+.machine-card.status-warning::before {
+  background: var(--amber-400);
+}
+
+.machine-card.status-critical::before {
+  background: var(--red-500);
+  box-shadow: 0 0 20px var(--red-500);
+}
+
+.machine-card:hover {
+  border-color: var(--steel-200);
+  background: var(--bg-tertiary);
+}
+
+/* ========================================
+   CARD HEADER
+   ======================================== */
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--steel-100);
+}
+
+.card-title-section {
+  flex: 1;
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--steel-400);
+  margin-bottom: 0.5rem;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--steel-300);
+}
+
+.machine-id {
+  font-weight: 600;
+  color: var(--cyan-500);
+}
+
+.machine-location {
+  font-weight: 400;
+}
+
+.meta-divider {
+  color: var(--steel-200);
+}
+
+.sensor-indicator {
+  color: var(--amber-400);
+  font-weight: 600;
+  animation: glow 2s infinite;
+}
+
+/* ========================================
+   SENSOR READINGS
+   ======================================== */
+
+.sensor-readings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.reading {
+  background: var(--bg-primary);
+  border: 1px solid var(--steel-100);
+  padding: 1rem;
+  border-radius: 2px;
+}
+
+.reading-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--steel-300);
+  margin-bottom: 0.5rem;
+}
+
+.reading-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--steel-400);
+  margin-bottom: 0.5rem;
+}
+
+.reading-unit {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--steel-300);
+}
+
+/* Temperature bar */
+.reading-bar {
+  height: 4px;
+  background: var(--steel-100);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.reading-bar-fill {
+  height: 100%;
+  transition: width 0.5s ease, background 0.3s ease;
+}
+
+/* Vibration indicator */
+.vibration-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+}
+
+.vib-active {
+  font-size: 1.5rem;
+  color: var(--amber-400);
+}
+
+.vib-nominal {
+  font-size: 1.5rem;
+  color: var(--green-500);
+}
+
+/* ========================================
+   GAUGES GRID
+   ======================================== */
+
+.gauges-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 500px) {
+  .sensor-readings {
+    grid-template-columns: 1fr;
+  }
+  
+  .gauges-grid {
+    grid-template-columns: 1fr;
+  }
+}

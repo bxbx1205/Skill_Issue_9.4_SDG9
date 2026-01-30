@@ -1,68 +1,273 @@
+/* ========================================
+   INDUSTRIAL IOT CONTROL ROOM AESTHETIC
+   Theme: Factory Night Shift
+   ======================================== */
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Color System - Industrial Dark */
+  --bg-primary: #0a0e14;
+  --bg-secondary: #12161e;
+  --bg-tertiary: #1a1f2b;
+  --bg-overlay: rgba(10, 14, 20, 0.85);
+  
+  /* Steel & Metal tones */
+  --steel-100: #3d4556;
+  --steel-200: #525866;
+  --steel-300: #6b7280;
+  --steel-400: #9ca3af;
+  
+  /* Accent: Amber Warning System */
+  --amber-300: #fbbf24;
+  --amber-400: #f59e0b;
+  --amber-500: #d97706;
+  
+  /* Danger: Red Alert */
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  
+  /* Success: Operational Green */
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  
+  /* Blueprint Cyan */
+  --cyan-400: #22d3ee;
+  --cyan-500: #06b6d4;
+  
+  /* Typography */
+  --font-data: 'IBM Plex Mono', 'Courier New', monospace;
+  --font-heading: 'JetBrains Mono', 'Consolas', monospace;
+  --font-body: 'IBM Plex Mono', monospace;
+  
+  /* Grid & Spacing */
+  --grid-size: 8px;
+  --border-radius: 2px;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* ========================================
+   RESET & BASE
+   ======================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-a:hover {
-  color: #535bf2;
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--steel-400);
+  line-height: 1.6;
+  font-size: 14px;
+  
+  /* Industrial atmosphere: layered background */
+  background-image: 
+    linear-gradient(rgba(6, 182, 212, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.02) 1px, transparent 1px),
+    radial-gradient(ellipse at top, rgba(10, 14, 20, 0.9), var(--bg-primary) 70%);
+  background-size: 
+    40px 40px,
+    40px 40px,
+    100% 100%;
+  background-position: 0 0, 0 0, center;
+  
+  /* Subtle noise texture */
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#root {
+  position: relative;
+  z-index: 2;
   min-height: 100vh;
 }
 
+/* ========================================
+   TYPOGRAPHY
+   ======================================== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--steel-400);
+}
+
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: 2.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
+h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+/* Numeric data styling */
+.numeric {
+  font-family: var(--font-data);
   font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.text-amber {
+  color: var(--amber-400);
+}
+
+.text-red {
+  color: var(--red-500);
+}
+
+.text-green {
+  color: var(--green-500);
+}
+
+.text-cyan {
+  color: var(--cyan-500);
+}
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-family: var(--font-data);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: var(--border-radius);
+  border: 1px solid;
+}
+
+.badge-operational {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: var(--green-500);
+  color: var(--green-500);
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--amber-400);
+  color: var(--amber-400);
+  animation: pulse-warning 2s infinite;
+}
+
+.badge-critical {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--red-500);
+  color: var(--red-500);
+  animation: pulse-critical 1.5s infinite;
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+@keyframes pulse-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes pulse-critical {
+  0%, 100% { 
+    opacity: 1; 
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
   }
-  a:hover {
-    color: #747bff;
+  50% { 
+    opacity: 0.8; 
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
   }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    text-shadow: 0 0 4px rgba(34, 211, 238, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+  }
+}
+
+/* ========================================
+   SCROLLBAR
+   ======================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--steel-200);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--steel-300);
+}
+
+/* ========================================
+   SELECTION
+   ======================================== */
+::selection {
+  background: rgba(6, 182, 212, 0.3);
+  color: var(--cyan-400);
 }

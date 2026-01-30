@@ -1,0 +1,139 @@
+/* ========================================
+   ALERTS PANEL
+   ======================================== */
+
+.alerts-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--steel-100);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--steel-100);
+}
+
+.panel-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--steel-400);
+}
+
+.alert-count {
+  padding: 0.25rem 0.75rem;
+  background: var(--steel-100);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--steel-400);
+}
+
+/* ========================================
+   ALERTS LIST
+   ======================================== */
+
+.alerts-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.alert-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg-primary);
+  border-left: 3px solid;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.alert-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateX(4px);
+}
+
+/* Severity styling */
+.severity-critical {
+  border-left-color: var(--red-500);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.severity-warning {
+  border-left-color: var(--amber-400);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.alert-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.severity-critical .alert-icon {
+  color: var(--red-500);
+  animation: pulse-critical 1.5s infinite;
+}
+
+.severity-warning .alert-icon {
+  color: var(--amber-400);
+}
+
+.alert-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.alert-machine {
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-data);
+  color: var(--cyan-500);
+  letter-spacing: 0.05em;
+}
+
+.alert-message {
+  font-size: 0.875rem;
+  color: var(--steel-400);
+  line-height: 1.4;
+}
+
+.alert-time {
+  font-size: 0.625rem;
+  color: var(--steel-300);
+  margin-top: 0.25rem;
+}
+
+/* ========================================
+   NO ALERTS STATE
+   ======================================== */
+
+.no-alerts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--steel-300);
+  text-align: center;
+}
+
+.no-alerts-icon {
+  font-size: 3rem;
+  color: var(--green-500);
+  margin-bottom: 1rem;
+}
+
+.no-alerts p {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
