@@ -7,77 +7,42 @@ import React from 'react';
 
 const RiskRanking = ({ rankedMachines, topRiskMachine }) => {
   const getRiskColor = (risk) => {
-    if (risk >= 70) return '#ef4444';
-    if (risk >= 50) return '#f97316';
-    if (risk >= 30) return '#eab308';
-    return '#22c55e';
-  };
-
-  const getMedalEmoji = (index) => {
-    switch (index) {
-      case 0: return '🥇';
-      case 1: return '🥈';
-      case 2: return '🥉';
-      default: return `${index + 1}.`;
-    }
+    if (risk >= 70) return 'var(--color-danger)';
+    if (risk >= 50) return 'var(--color-warning)';
+    if (risk >= 30) return 'var(--color-warning)';
+    return 'var(--color-success)';
   };
 
   return (
-    <div className="risk-ranking" style={{
-      background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-      borderRadius: 16,
-      padding: 20,
-      border: '1px solid #334155',
-      height: '100%'
-    }}>
-      <h3 style={{ 
-        margin: '0 0 16px', 
-        color: '#f8fafc', 
-        fontSize: 16, 
-        fontWeight: 600,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8
-      }}>
-        🏆 Risk Ranking
-      </h3>
+    <div className="card risk-ranking-card">
+      <div className="card-header">
+        <h3 className="card-title">
+          <span className="icon">🏆</span> Risk Ranking
+        </h3>
+      </div>
 
       {/* Top Risk Highlight */}
       {topRiskMachine && (
-        <div style={{
-          background: topRiskMachine.failureRisk >= 70 
-            ? 'linear-gradient(135deg, #450a0a, #7f1d1d)'
-            : 'linear-gradient(135deg, #1e3a5f, #1e293b)',
-          border: `2px solid ${getRiskColor(topRiskMachine.failureRisk)}`,
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 16,
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>
-            Top Machine at Risk
+        <div className="top-risk-banner">
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            Highest Risk Asset
           </div>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 10
+            gap: 16
           }}>
-            <span style={{ fontSize: 28 }}>{topRiskMachine.icon}</span>
-            <div>
+            <span style={{ fontSize: 48, filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }}>{topRiskMachine.icon}</span>
+            <div style={{ textAlign: 'left' }}>
               <div style={{ 
-                fontSize: 20, 
+                fontSize: '1.25rem', 
                 fontWeight: 700, 
-                color: '#f8fafc' 
+                color: 'var(--text-primary)' 
               }}>
                 {topRiskMachine.name}
               </div>
-              <div style={{ 
-                fontSize: 28, 
-                fontWeight: 800, 
-                color: getRiskColor(topRiskMachine.failureRisk),
-                textShadow: `0 0 20px ${getRiskColor(topRiskMachine.failureRisk)}80`
-              }}>
+              <div className="risk-score-large">
                 {topRiskMachine.failureRisk.toFixed(1)}%
               </div>
             </div>
@@ -86,62 +51,31 @@ const RiskRanking = ({ rankedMachines, topRiskMachine }) => {
       )}
 
       {/* Ranking List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="ranking-list">
         {rankedMachines.map((machine, index) => (
-          <div
-            key={machine.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '10px 14px',
-              background: index === 0 ? 'rgba(239, 68, 68, 0.1)' : '#0f172a',
-              borderRadius: 10,
-              border: index === 0 
-                ? '1px solid rgba(239, 68, 68, 0.3)'
-                : '1px solid transparent'
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10
+          <div key={machine.id} className="ranking-item">
+            <span className="rank-index">
+              {index + 1}.
+            </span>
+            <span style={{ fontWeight: 500, color: 'var(--text-secondary)', minWidth: 100 }}>{machine.name}</span>
+            
+            <div className="risk-bar-container">
+              <div className="risk-bar-fill" style={{
+                width: `${machine.failureRisk}%`,
+                background: getRiskColor(machine.failureRisk)
+              }}></div>
+            </div>
+            
+            <span style={{ 
+              width: 50, 
+              textAlign: 'right', 
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              color: getRiskColor(machine.failureRisk),
+              fontFamily: 'var(--font-mono)'
             }}>
-              <span style={{ fontSize: 18, width: 28 }}>{getMedalEmoji(index)}</span>
-              <span style={{ fontSize: 18 }}>{machine.icon}</span>
-              <div>
-                <div style={{ 
-                  color: '#f8fafc', 
-                  fontWeight: 500,
-                  fontSize: 14
-                }}>
-                  {machine.name}
-                </div>
-                <div style={{ 
-                  fontSize: 11, 
-                  color: '#64748b' 
-                }}>
-                  {machine.type}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ textAlign: 'right' }}>
-              <div style={{
-                fontSize: 18,
-                fontWeight: 700,
-                color: getRiskColor(machine.failureRisk)
-              }}>
-                {machine.failureRisk.toFixed(1)}%
-              </div>
-              <div style={{
-                fontSize: 10,
-                color: '#64748b',
-                textTransform: 'uppercase'
-              }}>
-                Risk
-              </div>
-            </div>
+              {machine.failureRisk.toFixed(0)}%
+            </span>
           </div>
         ))}
       </div>

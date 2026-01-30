@@ -7,95 +7,64 @@ import React from 'react';
 import GaugeChart from './GaugeChart';
 
 const MachineCard = ({ machine, isTopRisk = false }) => {
-  const getStatusBadgeStyle = (status) => {
-    const colors = {
-      'Critical': { bg: '#fef2f2', text: '#dc2626', border: '#fecaca' },
-      'Warning': { bg: '#fff7ed', text: '#ea580c', border: '#fed7aa' },
-      'Caution': { bg: '#fefce8', text: '#ca8a04', border: '#fef08a' },
-      'Healthy': { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' }
-    };
-    return colors[status] || colors['Healthy'];
+  const getStatusClass = (status) => {
+    switch(status) {
+      case 'Critical': return 'status-critical';
+      case 'Warning': return 'status-warning';
+      case 'Caution': return 'status-caution';
+      default: return 'status-healthy';
+    }
   };
 
-  const statusStyle = getStatusBadgeStyle(machine.status);
+  const statusClass = getStatusClass(machine.status);
 
   return (
-    <div className={`machine-card ${isTopRisk ? 'top-risk' : ''}`} style={{
-      background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-      borderRadius: 16,
-      padding: 20,
-      border: isTopRisk ? '2px solid #ef4444' : '1px solid #334155',
-      position: 'relative',
-      overflow: 'hidden',
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    }}>
+    <div className={`card machine-card ${isTopRisk ? 'risk-critical' : ''}`}>
       {/* Top Risk Badge */}
       {isTopRisk && (
         <div style={{
           position: 'absolute',
           top: 10,
           right: 10,
-          background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+          background: 'rgba(239, 68, 68, 0.9)',
           color: 'white',
           padding: '4px 10px',
           borderRadius: 12,
-          fontSize: 11,
+          fontSize: '0.7rem',
           fontWeight: 600,
           display: 'flex',
           alignItems: 'center',
           gap: 4,
-          boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)'
+          boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
+          zIndex: 10
         }}>
           🏆 TOP RISK
         </div>
       )}
       
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-        <span style={{ fontSize: 32, marginRight: 12 }}>{machine.icon}</span>
-        <div>
-          <h3 style={{ margin: 0, color: '#f8fafc', fontSize: 18, fontWeight: 600 }}>
-            {machine.name}
-          </h3>
-          <span style={{ 
-            fontSize: 12, 
-            color: '#64748b',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4
-          }}>
-            {machine.type} • 
+      <div className="machine-header">
+        <div className="machine-icon">
+          {machine.icon}
+        </div>
+        <div className="machine-info">
+          <h3>{machine.name}</h3>
+          <div className="machine-meta">
+            <span className="machine-type">{machine.type}</span>
+            <span>•</span>
             <span style={{ 
-              color: machine.dataSource === 'Real Sensor' ? '#22c55e' : '#3b82f6',
+              color: machine.dataSource === 'Real Sensor' ? 'var(--color-success)' : 'var(--color-info)',
               fontWeight: 500
             }}>
-              {machine.dataSource === 'Real Sensor' ? '📡 Live' : '💻 Simulated'}
+              {machine.dataSource === 'Real Sensor' ? '📡 Live' : '💻 Sim'}
             </span>
-          </span>
+          </div>
         </div>
       </div>
 
       {/* Status Badge */}
-      <div style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        background: statusStyle.bg,
-        color: statusStyle.text,
-        padding: '6px 12px',
-        borderRadius: 20,
-        fontSize: 12,
-        fontWeight: 600,
-        marginBottom: 16,
-        border: `1px solid ${statusStyle.border}`
-      }}>
-        <span style={{
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          background: statusStyle.text,
-          animation: machine.status === 'Critical' ? 'pulse 1s infinite' : 'none'
-        }}></span>
+      <div className={`machine-status-badge ${statusClass}`} style={{ marginBottom: 16 }}>
+        <span className={`status-dot ${machine.status === 'Critical' ? 'pulse' : ''}`}></span>
         {machine.status}
       </div>
 
@@ -104,13 +73,13 @@ const MachineCard = ({ machine, isTopRisk = false }) => {
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: 8,
-        marginBottom: 16
+        marginBottom: 20
       }}>
         <GaugeChart
           value={machine.temperature}
           min={0}
           max={100}
-          label="Temperature"
+          label="Temp"
           unit="°C"
           size={100}
         />
@@ -137,29 +106,29 @@ const MachineCard = ({ machine, isTopRisk = false }) => {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: 10,
-        background: '#0f172a',
-        borderRadius: 10,
+        gap: 12,
+        background: 'rgba(0,0,0,0.2)',
+        borderRadius: 8,
         padding: 12
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>Vibration</div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>Vibration</div>
           <div style={{
-            fontSize: 14,
+            fontSize: '0.9rem',
             fontWeight: 600,
-            color: machine.vibration === 1 ? '#ef4444' : '#22c55e',
+            color: machine.vibration === 1 ? 'var(--color-danger)' : 'var(--color-success)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 4
+            gap: 6
           }}>
-            {machine.vibration === 1 ? '⚠️ Detected' : '✓ Normal'}
+            {machine.vibration === 1 ? 'Detect' : 'Normal'}
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>Last Update</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8' }}>
-            {new Date(machine.lastUpdate).toLocaleTimeString()}
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>Updated</div>
+          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+            {new Date(machine.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit', second:'2-digit' })}
           </div>
         </div>
       </div>

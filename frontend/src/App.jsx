@@ -1,17 +1,15 @@
 /**
  * Predictive Maintenance Dashboard
  * PS 9.4 - SDG 9: Industry Innovation
- * 
- * Smart IoT + AI predictive maintenance system that monitors
- * factory machines using temperature and vibration sensors.
  */
 
 import { useState, useEffect } from 'react';
 import MachineCard from './components/MachineCard';
 import AlertsPanel from './components/AlertsPanel';
 import RiskRanking from './components/RiskRanking';
-import EventLogs from './components/EventLogs';
 import FleetStats from './components/FleetStats';
+import EventLogs from './components/EventLogs';
+import FactoryScene from './components/FactoryScene';
 import './App.css';
 
 // API Configuration
@@ -22,7 +20,6 @@ function App() {
   const [fleetData, setFleetData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastUpdate, setLastUpdate] = useState(null);
 
   // Fetch fleet data from API
   const fetchFleetData = async () => {
@@ -33,7 +30,6 @@ function App() {
       }
       const data = await response.json();
       setFleetData(data);
-      setLastUpdate(new Date());
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -46,24 +42,16 @@ function App() {
   // Initial fetch and polling
   useEffect(() => {
     fetchFleetData();
-    
     const interval = setInterval(fetchFleetData, REFRESH_INTERVAL);
-    
     return () => clearInterval(interval);
   }, []);
 
-  // Get top risk machine ID for highlighting
-  const topRiskMachineId = fleetData?.topRiskMachine?.name 
-    ? fleetData.machines.find(m => m.name === fleetData.topRiskMachine.name)?.id 
-    : null;
-
   if (loading && !fleetData) {
     return (
-      <div className="loading-screen">
-        <div className="loading-content">
-          <div className="spinner"></div>
-          <h2>🏭 Predictive Maintenance System</h2>
-          <p>Connecting to sensors...</p>
+      <div className="dashboard" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="status-indicator simulation pulse" style={{ width: 40, height: 40, margin: '0 auto 20px' }}></div>
+          <h2>Initializing System...</h2>
         </div>
       </div>
     );
@@ -71,16 +59,21 @@ function App() {
 
   if (error && !fleetData) {
     return (
-      <div className="error-screen">
-        <div className="error-content">
-          <span className="error-icon">⚠️</span>
-          <h2>Connection Error</h2>
-          <p>{error}</p>
-          <p className="error-hint">
-            Make sure the backend server is running at {API_BASE_URL}
-          </p>
-          <button onClick={fetchFleetData} className="retry-button">
-            🔄 Retry Connection
+      <div className="dashboard" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <div className="card" style={{ textAlign: 'center', maxWidth: 400 }}>
+          <span style={{ fontSize: 40, display: 'block', marginBottom: 16 }}>⚠️</span>
+          <h2 style={{ marginBottom: 8 }}>Connection Lost</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>{error}</p>
+          <button onClick={fetchFleetData} style={{
+            background: 'var(--color-info)',
+            color: 'white',
+            border: 'none',
+            padding: '10px 20px',
+            borderRadius: 8,
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}>
+            Retry Connection
           </button>
         </div>
       </div>
@@ -89,92 +82,86 @@ function App() {
 
   return (
     <div className="dashboard">
-      {/* Header */}
       <header className="dashboard-header">
-        <div className="header-left">
+        <div className="header-brand">
           <h1>
-            <span className="header-icon">🏭</span>
-            Predictive Maintenance System
+            <span className="icon">🏭</span>
+            Predictive Maintenance
           </h1>
-          <span className="header-subtitle">PS 9.4 - SDG 9: Industry Innovation</span>
+          <span className="header-meta">PS 9.4 - SDG 9: Industry Innovation</span>
         </div>
-        <div className="header-right">
-          <div className="header-status">
-            <span className={`status-dot ${fleetData?.simulationMode ? 'simulation' : 'live'}`}></span>
-            {fleetData?.simulationMode ? '💻 Simulation Mode' : '📡 Live Sensors'}
-          </div>
-          {lastUpdate && (
-            <div className="last-update">
-              Last update: {lastUpdate.toLocaleTimeString()}
-            </div>
-          )}
+        
+        <div className="header-status">
+           <span className="status-indicator pulse"></span>
+           System Online
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="dashboard-main">
-        {/* Fleet Statistics Bar */}
-        {fleetData?.fleetStats && (
-          <section className="stats-section">
-            <FleetStats 
-              stats={fleetData.fleetStats}
-              simulationMode={fleetData.simulationMode}
-              serialConnected={fleetData.serialConnected}
-            />
-          </section>
-        )}
-
-        {/* Machine Cards Grid */}
-        <section className="machines-section">
-          <h2 className="section-title">
-            <span>⚡</span> Fleet Monitoring
-            <span className="machine-count">{fleetData?.machines?.length || 0} Machines</span>
-          </h2>
-          <div className="machines-grid">
-            {fleetData?.machines?.map((machine) => (
-              <MachineCard 
-                key={machine.id} 
-                machine={machine}
-                isTopRisk={machine.id === topRiskMachineId}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* Bottom Row - Alerts, Ranking, Logs */}
-        <section className="bottom-section">
-          <div className="bottom-grid">
-            {/* Alerts Panel */}
-            <div className="alerts-column">
-              <AlertsPanel machines={fleetData?.machines || []} />
-            </div>
-
-            {/* Risk Ranking */}
-            <div className="ranking-column">
-              <RiskRanking 
-                rankedMachines={fleetData?.rankedMachines || []}
-                topRiskMachine={fleetData?.topRiskMachine}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Event Logs */}
-        <section className="logs-section">
-          <EventLogs logs={fleetData?.logs || []} />
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="dashboard-footer">
-        <div className="footer-content">
-          <span>🌍 Smart Factory IoT Solution</span>
-          <span>•</span>
-          <span>Industry 4.0 Predictive Maintenance</span>
-          <span>•</span>
-          <span>SDG 9: Industry, Innovation and Infrastructure</span>
+      <div className="dashboard-container">
+        
+        {/* Fleet Stats Banner */}
+        <div style={{ marginBottom: 24 }}>
+          <FleetStats 
+            stats={fleetData.fleetStats} 
+            simulationMode={!fleetData.serialConnected}
+            serialConnected={fleetData.serialConnected}
+          />
         </div>
-      </footer>
+
+        {/* 3D Digital Twin Factory Scene */}
+        <div style={{ marginBottom: 24 }}>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-subtle)' }}>
+              <h3 className="card-title">
+                <span className="icon">🏭</span> Digital Twin - Factory Floor
+              </h3>
+            </div>
+            <div style={{ height: '500px' }}>
+              <FactoryScene 
+                machines={fleetData.machines}
+                onMachineSelect={(machine) => console.log('Selected:', machine.name)}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="main-content-grid">
+          
+          {/* Sidebar Area */}
+          <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <RiskRanking 
+              rankedMachines={fleetData.rankedMachines}
+              topRiskMachine={fleetData.topRiskMachine}
+            />
+            <AlertsPanel machines={fleetData.machines} />
+          </div>
+
+          {/* Main Grid Area */}
+          <div className="machines-grid-container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '1.25rem' }}>Machine Fleet Status</h2>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                Total Machines: {fleetData.machines.length}
+              </span>
+            </div>
+            
+            <div className="machines-grid">
+              {fleetData.machines.map(machine => (
+                <MachineCard 
+                  key={machine.id} 
+                  machine={machine}
+                  isTopRisk={fleetData.topRiskMachine?.id === machine.id}
+                />
+              ))}
+            </div>
+
+            {/* Event Logs */}
+            <EventLogs logs={fleetData.logs || []} />
+          </div>
+          
+        </div>
+      </div>
     </div>
   );
 }
