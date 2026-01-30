@@ -13,6 +13,24 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
-  }
+    "NODE_ENV": "production",
+    "VERCEL": "1"
+  },
+  "functions": {
+    "app.js": {
+      "maxDuration": 10,
+      "memory": 128
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2, s-maxage=2, stale-while-revalidate=10"
+        }
+      ]
+    }
+  ]
 }

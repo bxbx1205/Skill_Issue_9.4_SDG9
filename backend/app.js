@@ -8,6 +8,11 @@
  * - Health score & failure risk calculation
  * - Alert logging system
  * - REST API for React dashboard
+ * 
+ * VERCEL FREE TIER OPTIMIZED:
+ * - Stateless serverless functions
+ * - Rate limiting protection
+ * - Caching headers for reduced invocations
  */
 
 const express = require('express');
@@ -16,9 +21,63 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ==================== RATE LIMITING (In-Memory for Vercel) ====================
+// Simple rate limiter - tracks requests per IP
+const rateLimit = new Map();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute window
+const MAX_REQUESTS_PER_WINDOW = 20; // 20 requests per minute per IP - realtime 3s intervals
+
+function rateLimiter(req, res, next) {
+  // Skip rate limiting for health checks
+  if (req.path === '/api/health' || req.path === '/') {
+    return next();
+  }
+  
+  const ip = req.headers['x-forwarded-for'] || req.ip || 'unknown';
+  const now = Date.now();
+  
+  if (!rateLimit.has(ip)) {
+    rateLimit.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return next();
+  }
+  
+  const clientData = rateLimit.get(ip);
+  
+  // Reset window if expired
+  if (now > clientData.resetTime) {
+    rateLimit.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return next();
+  }
+  
+  // Check if over limit
+  if (clientData.count >= MAX_REQUESTS_PER_WINDOW) {
+    return res.status(429).json({
+      success: false,
+      error: 'Too many requests. Please slow down.',
+      retryAfter: Math.ceil((clientData.resetTime - now) / 1000)
+    });
+  }
+  
+  // Increment counter
+  clientData.count++;
+  rateLimit.set(ip, clientData);
+  next();
+}
+
+// Clean up old rate limit entries periodically (memory management)
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimit.entries()) {
+    if (now > data.resetTime) {
+      rateLimit.delete(ip);
+    }
+  }
+}, 60000);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(rateLimiter);
 
 // ==================== CONFIGURATION ====================
 
@@ -500,8 +559,12 @@ function startSimulationMode() {
 /**
  * GET /api/fleet
  * Returns all fleet machine data, health scores, and recent logs
+ * OPTIMIZED: Added caching headers to reduce Vercel invocations
  */
 app.get('/api/fleet', (req, res) => {
+  // Cache for 2 seconds to reduce function invocations on Vercel free tier
+  res.set('Cache-Control', 'public, max-age=2, s-maxage=2');
+  
   // Get fleet array sorted by failure risk (highest first)
   const machines = [
     fleetData.vibrationMotor,
@@ -578,12 +641,20 @@ app.get('/api/fleet', (req, res) => {
  * Health check endpoint
  */
 app.get('/api/health', (req, res) => {
+  // Cache health check for 5 seconds
+  res.set('Cache-Control', 'public, max-age=5, s-maxage=5');
+  
   res.json({
     status: 'healthy',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     serialConnected,
-    simulationMode: !serialConnected
+    simulationMode: !serialConnected,
+    rateLimit: {
+      maxRequests: MAX_REQUESTS_PER_WINDOW,
+      windowMs: RATE_LIMIT_WINDOW,
+      message: 'Optimized for Vercel free tier (100k invocations/month)'
+    }
   });
 });
 
@@ -592,6 +663,9 @@ app.get('/api/health', (req, res) => {
  * Returns only alert logs
  */
 app.get('/api/logs', (req, res) => {
+  // Cache logs for 2 seconds
+  res.set('Cache-Control', 'public, max-age=2, s-maxage=2');
+  
   res.json({
     success: true,
     logs: alertLogs
@@ -607,10 +681,20 @@ app.get('/api/logs', (req, res) => {
  * - TEMP -> Thermal Pump
  * - HUM -> Humidity Controller
  * - GAS -> Gas Detector
+ * 
+ * REALTIME: IoT sends median every 3 seconds (20 req/min)
  */
 app.post('/api/iot-data', (req, res) => {
   try {
     const { VIB, TEMP, HUM, GAS, DIST } = req.body;
+    
+    // Validate at least some data is provided
+    if (VIB === undefined && TEMP === undefined && HUM === undefined && GAS === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing sensor data. Provide at least one of: VIB, TEMP, HUM, GAS'
+      });
+    }
     
     // Update all sensor data from IoT device
     if (VIB !== undefined) {
@@ -664,69 +748,6 @@ app.post('/api/iot-data', (req, res) => {
 });
 
 /**
- * POST /api/iot-data
- * Receive sensor data from read_arduino.py (Python IoT bridge)
- * Expects: { VIB: number, TEMP: number, HUM?: number, GAS?: number, DIST?: number }
- */
-app.post('/api/iot-data', (req, res) => {
-  try {
-    const { VIB, TEMP, HUM, GAS, DIST } = req.body;
-    
-    // Validate required fields
-    if (TEMP === undefined || VIB === undefined) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: TEMP and VIB'
-      });
-    }
-    
-    // Update real sensor data
-    realSensorData.temperature = parseFloat(TEMP);
-    realSensorData.vibration = parseFloat(VIB) > 0.5 ? 1 : 0; // Threshold for vibration detection
-    realSensorData.lastUpdate = Date.now();
-    
-    // Store additional sensor data if provided
-    if (HUM !== undefined) realSensorData.humidity = parseFloat(HUM);
-    if (GAS !== undefined) realSensorData.gasLevel = parseFloat(GAS);
-    if (DIST !== undefined) realSensorData.distance = parseFloat(DIST);
-    
-    // Mark as connected (not simulation)
-    serialConnected = true;
-    
-    // Stop simulation if running
-    if (simulationInterval) {
-      clearInterval(simulationInterval);
-      simulationInterval = null;
-      console.log('✅ Switched from simulation to live IoT data');
-    }
-    
-    // Update fleet with new sensor data
-    updateFleet();
-    
-    console.log(`📡 IoT Data: Temp=${TEMP}°C, Vib=${VIB}, Hum=${HUM || 'N/A'}%, Gas=${GAS || 'N/A'}, Dist=${DIST || 'N/A'}cm`);
-    
-    res.json({
-      success: true,
-      message: 'Sensor data received',
-      data: {
-        temperature: realSensorData.temperature,
-        vibration: realSensorData.vibration,
-        humidity: realSensorData.humidity,
-        gasLevel: realSensorData.gasLevel,
-        distance: realSensorData.distance,
-        timestamp: realSensorData.lastUpdate
-      }
-    });
-  } catch (error) {
-    console.error('Error processing IoT data:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-/**
  * POST /api/test-alert
  * Generate a test alert (for demo purposes)
  */
@@ -771,30 +792,28 @@ app.get('/', (req, res) => {
 
 // ==================== SERVER STARTUP ====================
 
-app.listen(PORT, () => {
-  console.log('\n========================================');
-  console.log('🏭 PREDICTIVE MAINTENANCE SYSTEM');
-  console.log('   PS 9.4 - SDG 9: Industry Innovation');
-  console.log('========================================');
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📡 Serial port: ${SERIAL_PORT_PATH}`);
-  console.log('----------------------------------------');
-  
-  // Initialize serial connection
-  setupSerialPort();
-  
-  // Update fleet every second (even without new serial data)
-  setInterval(() => {
-    if (serialConnected) {
-      // Only update simulated machines when serial is connected
-      // Real machine updates from serial data handler
-      updatePumpB();
-      updateCompressorC();
-    }
-  }, 1000);
-});
+// Only start server if NOT running on Vercel (Vercel handles this automatically)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log('\n========================================');
+    console.log('🏭 PREDICTIVE MAINTENANCE SYSTEM');
+    console.log('   PS 9.4 - SDG 9: Industry Innovation');
+    console.log('========================================');
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📡 Serial port: ${SERIAL_PORT_PATH}`);
+    console.log('----------------------------------------');
+    
+    // Initialize serial connection (only for local development)
+    setupSerialPort();
+  });
+} else {
+  // Vercel serverless: Just log startup and skip serial
+  console.log('☁️  Running on Vercel serverless');
+  console.log('   State is NOT persisted between requests');
+  console.log('   Rate limit: 30 requests/minute per IP');
+}
 
-// Graceful shutdown
+// Graceful shutdown (only relevant for local development)
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down server...');
   if (serialPort && serialPort.isOpen) {
