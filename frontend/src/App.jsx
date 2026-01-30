@@ -2,24 +2,41 @@
  * Predictive Maintenance Dashboard
  * PS 9.4 - SDG 9: Industry Innovation
  * 
- * Smart IoT + AI predictive maintenance system that monitors
- * factory machines using temperature and vibration sensors.
- * 
- * OPTIMIZED: Handles Vercel free tier rate limits gracefully
+ * Material UI Version - Modern, Clean Interface
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Container,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Alert,
+  Paper,
+  Grid,
+  IconButton,
+} from '@mui/material';
+import {
+  Factory as FactoryIcon,
+  Refresh as RefreshIcon,
+  Sensors as SensorsIcon,
+  Computer as ComputerIcon,
+} from '@mui/icons-material';
+import theme from './theme';
 import MachineCard from './components/MachineCard';
 import AlertsPanel from './components/AlertsPanel';
 import RiskRanking from './components/RiskRanking';
 import EventLogs from './components/EventLogs';
 import FleetStats from './components/FleetStats';
 import FactoryScene from './components/FactoryScene';
-import './App.css';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-// Realtime 3 second refresh (20 requests/min) - synced with IoT data
 const REFRESH_INTERVAL = parseInt(import.meta.env.VITE_REFRESH_INTERVAL) || 3000;
 
 function App() {
@@ -31,36 +48,28 @@ function App() {
   const intervalRef = useRef(null);
   const backoffRef = useRef(REFRESH_INTERVAL);
 
-  // Fetch fleet data from API with rate limit handling
   const fetchFleetData = useCallback(async () => {
-    // Skip fetch if rate limited
     if (rateLimited) return;
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/fleet`);
       
-      // Handle rate limiting (429 status)
       if (response.status === 429) {
         const data = await response.json();
         setRateLimited(true);
         setError(`Rate limited. Retrying in ${data.retryAfter || 30} seconds...`);
-        
-        // Back off and retry after the specified time
         const retryAfter = (data.retryAfter || 30) * 1000;
         backoffRef.current = Math.min(retryAfter, 60000);
-        
         setTimeout(() => {
           setRateLimited(false);
           setError(null);
           backoffRef.current = REFRESH_INTERVAL;
         }, retryAfter);
-        
         return;
       }
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch fleet data');
-      }
+      if (!response.ok) throw new Error('Failed to fetch fleet data');
+      
       const data = await response.json();
       setFleetData(data);
       setLastUpdate(new Date());
@@ -75,12 +84,9 @@ function App() {
     }
   }, [rateLimited]);
 
-  // Initial fetch and polling
   useEffect(() => {
     fetchFleetData();
-    
     intervalRef.current = setInterval(fetchFleetData, REFRESH_INTERVAL);
-    
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -89,143 +95,208 @@ function App() {
     };
   }, [fetchFleetData]);
 
-  // Get top risk machine ID for highlighting
   const topRiskMachineId = fleetData?.topRiskMachine?.name 
     ? fleetData.machines.find(m => m.name === fleetData.topRiskMachine.name)?.id 
     : null;
 
+  // Loading State
   if (loading && !fleetData) {
     return (
-      <div className="loading-screen">
-        <div className="loading-content">
-          <div className="spinner"></div>
-          <h2>🏭 Predictive Maintenance System</h2>
-          <p>Connecting to sensors...</p>
-        </div>
-      </div>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box
+          sx={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'background.default',
+            gap: 3,
+          }}
+        >
+          <CircularProgress size={60} thickness={4} />
+          <Typography variant="h5" fontWeight={600}>
+            PREDICTIVE MAINTENANCE SYSTEM
+          </Typography>
+          <Typography color="text.secondary">
+            Connecting to sensors...
+          </Typography>
+        </Box>
+      </ThemeProvider>
     );
   }
 
+  // Error State
   if (error && !fleetData) {
     return (
-      <div className="error-screen">
-        <div className="error-content">
-          <span className="error-icon">⚠️</span>
-          <h2>Connection Error</h2>
-          <p>{error}</p>
-          <p className="error-hint">
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box
+          sx={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'background.default',
+            gap: 3,
+            p: 3,
+          }}
+        >
+          <Typography variant="h1" sx={{ fontSize: '4rem', color: 'error.main' }}>!</Typography>
+          <Typography variant="h5" fontWeight={600}>CONNECTION ERROR</Typography>
+          <Alert severity="error" sx={{ maxWidth: 500 }}>{error}</Alert>
+          <Typography color="text.secondary" textAlign="center">
             Make sure the backend server is running at {API_BASE_URL}
-          </p>
-          <button onClick={fetchFleetData} className="retry-button">
-            🔄 Retry Connection
-          </button>
-        </div>
-      </div>
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<RefreshIcon />}
+            onClick={fetchFleetData}
+            size="large"
+          >
+            Retry Connection
+          </Button>
+        </Box>
+      </ThemeProvider>
     );
   }
 
   return (
-    <div className="dashboard">
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="header-left">
-          <h1>
-            <span className="header-icon">🏭</span>
-            Predictive Maintenance System
-          </h1>
-          <span className="header-subtitle">PS 9.4 - SDG 9: Industry Innovation</span>
-        </div>
-        <div className="header-right">
-          <div className="header-status">
-            <span className={`status-dot ${fleetData?.simulationMode ? 'simulation' : 'live'}`}></span>
-            {fleetData?.simulationMode ? '💻 Simulation Mode' : '📡 Live Sensors'}
-          </div>
-          {lastUpdate && (
-            <div className="last-update">
-              Last update: {lastUpdate.toLocaleTimeString()}
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="dashboard-main">
-        {/* Fleet Statistics Bar */}
-        {fleetData?.fleetStats && (
-          <section className="stats-section">
-            <FleetStats 
-              stats={fleetData.fleetStats}
-              simulationMode={fleetData.simulationMode}
-              serialConnected={fleetData.serialConnected}
-            />
-          </section>
-        )}
-
-        {/* Machine Cards Grid */}
-        <section className="machines-section">
-          <h2 className="section-title">
-            <span>⚡</span> Fleet Monitoring
-            <span className="machine-count">{fleetData?.machines?.length || 0} Machines</span>
-          </h2>
-          <div className="machines-grid">
-            {fleetData?.machines?.map((machine) => (
-              <MachineCard 
-                key={machine.id} 
-                machine={machine}
-                isTopRisk={machine.id === topRiskMachineId}
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+        {/* Header AppBar */}
+        <AppBar position="sticky" elevation={1}>
+          <Toolbar sx={{ justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <FactoryIcon sx={{ fontSize: 28 }} />
+              <Box>
+                <Typography variant="h6" fontWeight={700}>
+                  PREDICTIVE MAINTENANCE SYSTEM
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  Industrial IoT Monitoring Platform
+                </Typography>
+              </Box>
+            </Box>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Chip
+                icon={fleetData?.simulationMode ? <ComputerIcon /> : <SensorsIcon />}
+                label={fleetData?.simulationMode ? 'SIMULATION' : 'LIVE'}
+                color={fleetData?.simulationMode ? 'default' : 'success'}
+                variant="filled"
+                size="small"
+                sx={{ bgcolor: fleetData?.simulationMode ? 'rgba(255,255,255,0.2)' : undefined, color: fleetData?.simulationMode ? 'white' : undefined }}
               />
-            ))}
-          </div>
-        </section>
+              {lastUpdate && (
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  Updated: {lastUpdate.toLocaleTimeString()}
+                </Typography>
+              )}
+              <IconButton onClick={fetchFleetData} sx={{ color: 'white' }}>
+                <RefreshIcon />
+              </IconButton>
+            </Box>
+          </Toolbar>
+        </AppBar>
 
-        {/* 3D Factory Scene */}
-        <section className="factory-scene-section">
-          <h2 className="section-title">
-            <span>🏭</span> 3D Factory View
-          </h2>
-          <div className="factory-scene-container" style={{ height: '500px', borderRadius: '12px', overflow: 'hidden' }}>
-            <FactoryScene 
-              machines={fleetData?.machines || []}
-              onMachineSelect={(machine) => console.log('Selected:', machine)}
-            />
-          </div>
-        </section>
+        {/* Main Content */}
+        <Container maxWidth="xl" sx={{ py: 3 }}>
+          {/* Fleet Statistics */}
+          {fleetData?.fleetStats && (
+            <Box sx={{ mb: 3 }}>
+              <FleetStats 
+                stats={fleetData.fleetStats}
+                simulationMode={fleetData.simulationMode}
+                serialConnected={fleetData.serialConnected}
+              />
+            </Box>
+          )}
 
-        {/* Bottom Row - Alerts, Ranking, Logs */}
-        <section className="bottom-section">
-          <div className="bottom-grid">
-            {/* Alerts Panel */}
-            <div className="alerts-column">
-              <AlertsPanel machines={fleetData?.machines || []} />
-            </div>
+          {/* Machine Cards Grid */}
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant="h6" fontWeight={600} color="text.primary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
+                Fleet Monitoring
+              </Typography>
+              <Chip 
+                label={`${fleetData?.machines?.length || 0} Machines`}
+                color="primary"
+                variant="outlined"
+              />
+            </Box>
+            <Grid container spacing={2}>
+              {fleetData?.machines?.map((machine) => (
+                <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={machine.id}>
+                  <MachineCard 
+                    machine={machine}
+                    isTopRisk={machine.id === topRiskMachineId}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
 
-            {/* Risk Ranking */}
-            <div className="ranking-column">
+          {/* 3D Factory Scene */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" fontWeight={600} color="text.primary" sx={{ mb: 2, textTransform: 'uppercase', letterSpacing: 1 }}>
+              3D Factory View
+            </Typography>
+            <Paper 
+              elevation={0}
+              sx={{ 
+                height: 400, 
+                overflow: 'hidden',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <FactoryScene 
+                machines={fleetData?.machines || []}
+                onMachineSelect={(machine) => console.log('Selected:', machine)}
+              />
+            </Paper>
+          </Box>
+
+          {/* Bottom Row - Alerts and Ranking */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <AlertsPanel alerts={fleetData?.alerts || []} />
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
               <RiskRanking 
                 rankedMachines={fleetData?.rankedMachines || []}
                 topRiskMachine={fleetData?.topRiskMachine}
               />
-            </div>
-          </div>
-        </section>
+            </Grid>
+          </Grid>
 
-        {/* Event Logs */}
-        <section className="logs-section">
+          {/* Event Logs */}
           <EventLogs logs={fleetData?.logs || []} />
-        </section>
-      </main>
+        </Container>
 
-      {/* Footer */}
-      <footer className="dashboard-footer">
-        <div className="footer-content">
-          <span>🌍 Smart Factory IoT Solution</span>
-          <span>•</span>
-          <span>Industry 4.0 Predictive Maintenance</span>
-          <span>•</span>
-          <span>SDG 9: Industry, Innovation and Infrastructure</span>
-        </div>
-      </footer>
-    </div>
+        {/* Footer */}
+        <Box
+          component="footer"
+          sx={{
+            py: 2,
+            px: 3,
+            mt: 'auto',
+            bgcolor: '#37474f',
+            color: 'white',
+            textAlign: 'center',
+          }}
+        >
+          <Typography variant="caption" sx={{ opacity: 0.8 }}>
+            INDUSTRIAL IoT MONITORING PLATFORM | INDUSTRY 4.0 | SDG 9: INDUSTRY, INNOVATION AND INFRASTRUCTURE
+          </Typography>
+        </Box>
+      </Box>
+    </ThemeProvider>
   );
 }
 

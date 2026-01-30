@@ -374,7 +374,7 @@ function GasPipe({ start, end, radius = 0.08, hasLeak = false, valveClosed = fal
             cursor: 'pointer',
             boxShadow: '0 4px 20px rgba(239, 68, 68, 0.5)'
           }} onClick={onValveClose}>
-            ⚠️ GAS LEAK DETECTED!
+            GAS LEAK DETECTED!
             <div style={{ fontSize: 10, marginTop: 4 }}>Click to close valve</div>
           </div>
         </Html>
@@ -390,7 +390,7 @@ function GasPipe({ start, end, radius = 0.08, hasLeak = false, valveClosed = fal
             fontSize: 11,
             fontWeight: 'bold'
           }}>
-            ✓ VALVE CLOSED
+            VALVE CLOSED
           </div>
         </Html>
       )}
@@ -590,13 +590,13 @@ function PumpMotor({ position, machine, isShutdown, onShutdown }) {
             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
           }}>
             <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: motorColor }}>
-              🔧 Pump Motor
+              PUMP MOTOR
             </div>
             <div style={{ display: 'grid', gap: 4 }}>
-              <div>🌡️ Temp: <span style={{ color: isCritical ? '#ef4444' : isOverheating ? '#f97316' : '#22c55e' }}>{machine.temperature}°C</span></div>
-              <div>📊 Health: <span style={{ color: machine.healthScore < 50 ? '#ef4444' : '#22c55e' }}>{machine.healthScore}%</span></div>
-              <div>📳 Vibration: <span style={{ color: machine.vibration === 1 ? '#ef4444' : '#22c55e' }}>{machine.vibration === 1 ? 'ALERT' : 'Normal'}</span></div>
-              <div>⚡ Status: <span style={{ color: isShutdown ? '#6b7280' : '#22c55e' }}>{isShutdown ? 'SHUTDOWN' : 'Running'}</span></div>
+              <div>TEMP: <span style={{ color: isCritical ? '#ef4444' : isOverheating ? '#f97316' : '#22c55e' }}>{machine.temperature}°C</span></div>
+              <div>HEALTH: <span style={{ color: machine.healthScore < 50 ? '#ef4444' : '#22c55e' }}>{machine.healthScore}%</span></div>
+              <div>VIBRATION: <span style={{ color: machine.vibration === 1 ? '#ef4444' : '#22c55e' }}>{machine.vibration === 1 ? 'ALERT' : 'Normal'}</span></div>
+              <div>STATUS: <span style={{ color: isShutdown ? '#6b7280' : '#22c55e' }}>{isShutdown ? 'SHUTDOWN' : 'Running'}</span></div>
             </div>
           </div>
         </Html>
@@ -617,7 +617,7 @@ function PumpMotor({ position, machine, isShutdown, onShutdown }) {
             boxShadow: '0 4px 20px rgba(239, 68, 68, 0.5)',
             textAlign: 'center'
           }} onClick={onShutdown}>
-            ⚠️ MAINTENANCE REQUIRED
+            MAINTENANCE REQUIRED
             <div style={{ fontSize: 10, marginTop: 4 }}>Click to shutdown motor</div>
           </div>
         </Html>
@@ -633,7 +633,7 @@ function PumpMotor({ position, machine, isShutdown, onShutdown }) {
             fontSize: 12,
             fontWeight: 'bold'
           }}>
-            🔧 MOTOR SHUTDOWN FOR MAINTENANCE
+            MOTOR SHUTDOWN FOR MAINTENANCE
           </div>
         </Html>
       )}
@@ -1207,7 +1207,7 @@ function Machine({ machine, config, onSelect, isShutdown, onShutdown, needsAtten
               boxShadow: `0 4px 20px ${attentionColor}80`,
               animation: 'bounce 1s infinite'
             }}>
-              <span style={{ animation: 'spin 2s linear infinite' }}>⚠️</span>
+              <span style={{ animation: 'spin 2s linear infinite' }}>!</span>
               NEEDS ATTENTION
             </div>
           </Html>
@@ -1228,28 +1228,28 @@ function Machine({ machine, config, onSelect, isShutdown, onShutdown, needsAtten
             }}>
               <div style={{ fontWeight: '700', fontSize: '13px', marginBottom: '8px', color: needsAttention ? attentionColor : statusColor }}>
                 {config.label} - {machine.name}
-                {needsAttention && <span style={{ marginLeft: 8, fontSize: 10 }}>⏱️ MONITORING</span>}
+                {needsAttention && <span style={{ marginLeft: 8, fontSize: 10 }}>MONITORING</span>}
               </div>
               <div style={{ display: 'grid', gap: '5px' }}>
-                <div>📡 Sensor: <span style={{ fontWeight: 600, color: '#60a5fa' }}>{config.sensorType}</span></div>
-                <div>📊 Value: <span style={{ color: needsAttention ? attentionColor : statusColor, fontWeight: 600 }}>
+                <div>SENSOR: <span style={{ fontWeight: 600, color: '#60a5fa' }}>{config.sensorType}</span></div>
+                <div>VALUE: <span style={{ color: needsAttention ? attentionColor : statusColor, fontWeight: 600 }}>
                   {machine.sensorValue !== undefined ? 
                     (config.sensorType === 'TEMP' ? `${machine.sensorValue?.toFixed(1)}°C` :
                      config.sensorType === 'HUM' ? `${machine.sensorValue?.toFixed(1)}%` :
                      config.sensorType === 'GAS' ? `${machine.sensorValue?.toFixed(0)} ppm` :
                      machine.sensorValue?.toFixed(2)) : 'N/A'}
                 </span></div>
-                <div>📊 Health: <span style={{ color: statusColor, fontWeight: 600 }}>{machine.healthScore}%</span></div>
-                <div>⚠️ Risk: <span style={{ color: statusColor, fontWeight: 600 }}>{machine.failureRisk}%</span></div>
+                <div>HEALTH: <span style={{ color: statusColor, fontWeight: 600 }}>{machine.healthScore}%</span></div>
+                <div>RISK: <span style={{ color: statusColor, fontWeight: 600 }}>{machine.failureRisk}%</span></div>
                 {isGasSensor && (
-                  <div>🔥 Gas: <span style={{ color: isCriticalLeak ? '#ef4444' : hasGasLeak ? '#f97316' : '#22c55e', fontWeight: 600 }}>
+                  <div>GAS: <span style={{ color: isCriticalLeak ? '#ef4444' : hasGasLeak ? '#f97316' : '#22c55e', fontWeight: 600 }}>
                     {isCriticalLeak ? 'CRITICAL LEAK!' : hasGasLeak ? 'LEAK DETECTED' : 'Normal'}
                   </span></div>
                 )}
-                <div>📳 Alert: <span style={{ color: hasVibration ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
+                <div>ALERT: <span style={{ color: hasVibration ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
                   {hasVibration ? 'TRIGGERED' : 'Normal'}
                 </span></div>
-                <div>⚡ Status: <span style={{ color: isShutdown ? '#6b7280' : isCritical ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
+                <div>STATUS: <span style={{ color: isShutdown ? '#6b7280' : isCritical ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
                   {isShutdown ? 'SHUTDOWN' : machine.status}
                 </span></div>
               </div>
@@ -1272,7 +1272,7 @@ function Machine({ machine, config, onSelect, isShutdown, onShutdown, needsAtten
               boxShadow: hasGasLeak ? '0 4px 20px rgba(249, 115, 22, 0.5)' : '0 4px 20px rgba(239, 68, 68, 0.5)',
               textAlign: 'center'
             }} onClick={(e) => { e.stopPropagation(); onShutdown(); }}>
-              ⚠️ {isCriticalLeak ? 'GAS LEAK!' : hasGasLeak ? 'GAS ALERT' : isCritical ? 'CRITICAL!' : 'ALERT'}
+              {isCriticalLeak ? 'GAS LEAK!' : hasGasLeak ? 'GAS ALERT' : isCritical ? 'CRITICAL!' : 'ALERT'}
               <div style={{ fontSize: 9, marginTop: 2 }}>
                 {hasGasLeak ? 'Click to close valve' : 'Click to shutdown'}
               </div>
@@ -1290,7 +1290,7 @@ function Machine({ machine, config, onSelect, isShutdown, onShutdown, needsAtten
               fontSize: 11,
               fontWeight: 'bold'
             }}>
-              🔧 MAINTENANCE MODE
+              MAINTENANCE MODE
             </div>
           </Html>
         )}
@@ -1553,7 +1553,7 @@ export default function FactoryScene({
         color: '#94a3b8',
         gap: 16
       }}>
-        <span style={{ fontSize: 40 }}>⚠️</span>
+        <span style={{ fontSize: 40, color: '#f59e0b' }}>!</span>
         <span>3D View temporarily unavailable</span>
         <button 
           onClick={() => { setContextLost(false); setIsLoaded(false); setTimeout(() => setIsLoaded(true), 100); }}
@@ -1638,9 +1638,9 @@ export default function FactoryScene({
           gap: 16,
           animation: 'pulse 2s infinite'
         }}>
-          <span>⚠️ ALERTS:</span>
-          {hasGasLeak && <span>🔥 GAS LEAK DETECTED</span>}
-          {hasCriticalMachine && <span>🌡️ CRITICAL TEMPERATURE</span>}
+          <span>ALERTS:</span>
+          {hasGasLeak && <span>GAS LEAK DETECTED</span>}
+          {hasCriticalMachine && <span>CRITICAL TEMPERATURE</span>}
           <span style={{ fontSize: 10 }}>Check 3D view for actions</span>
         </div>
       )}
@@ -1660,9 +1660,9 @@ export default function FactoryScene({
         border: '1px solid #334155',
       }}>
         {[
-          { mode: CAMERA_MODES.ORBIT, label: 'Orbit', icon: '🔭', key: '1' },
-          { mode: CAMERA_MODES.WALK, label: 'Walk', icon: '🚶', key: '2' },
-          { mode: CAMERA_MODES.DRONE, label: 'Drone', icon: '🚁', key: '3' },
+          { mode: CAMERA_MODES.ORBIT, label: 'Orbit', icon: 'O', key: '1' },
+          { mode: CAMERA_MODES.WALK, label: 'Walk', icon: 'W', key: '2' },
+          { mode: CAMERA_MODES.DRONE, label: 'Drone', icon: 'D', key: '3' },
         ].map(({ mode, label, icon, key }) => (
           <button
             key={mode}
@@ -1708,9 +1708,8 @@ export default function FactoryScene({
           padding: '10px 16px',
           fontSize: '11px',
           color: '#fff',
-        }}>
-          {!isPointerLocked ? (
-            <div>🖱️ Click to enable controls</div>
+        }}>n          {!isPointerLocked ? (
+            <div>Click to enable controls</div>
           ) : (
             <div style={{ display: 'flex', gap: '12px' }}>
               <span><b>WASD</b> Move</span>

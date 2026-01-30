@@ -1,64 +1,136 @@
 /**
- * Alerts Panel Component
- * Displays real-time warning alerts when machines enter danger zone
+ * Alerts Panel Component - Material UI Version
  */
 
 import React from 'react';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Alert,
+  List,
+  ListItem,
+  Chip,
+} from '@mui/material';
+import {
+  CheckCircle as CheckCircleIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
+  Info as InfoIcon,
+} from '@mui/icons-material';
 
-const AlertsPanel = ({ machines }) => {
-  // Filter machines with warning or critical status
-  const alertMachines = machines.filter(
-    m => m.status === 'Critical' || m.status === 'Warning' || m.status === 'Caution'
-  );
-
-  const getAlertClass = (status) => {
-    switch (status) {
-      case 'Critical': return 'critical';
-      case 'Warning': return 'warning';
-      default: return '';
+const AlertsPanel = ({ alerts = [] }) => {
+  const getSeverityColor = (severity) => {
+    switch (severity?.toLowerCase()) {
+      case 'high':
+      case 'critical':
+        return 'error';
+      case 'medium':
+      case 'warning':
+        return 'warning';
+      case 'low':
+      case 'info':
+        return 'info';
+      default:
+        return 'info';
     }
   };
 
-  return (
-    <div className="card alerts-panel">
-      <div className="card-header">
-        <h3 className="card-title">
-          <span className="icon">🔔</span> Active Alerts
-        </h3>
-        <span className="header-status" style={{
-          background: alertMachines.length > 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
-          color: alertMachines.length > 0 ? 'var(--color-danger)' : 'var(--color-success)',
-          border: 'none'
-        }}>
-          {alertMachines.length} Active
-        </span>
-      </div>
+  const getSeverityIcon = (severity) => {
+    switch (severity?.toLowerCase()) {
+      case 'high':
+      case 'critical':
+        return <ErrorIcon />;
+      case 'medium':
+      case 'warning':
+        return <WarningIcon />;
+      default:
+        return <InfoIcon />;
+    }
+  };
 
-      {alertMachines.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">✅</span>
-          <p style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>All systems normal</p>
-          <p style={{ fontSize: '0.75rem' }}>No active warnings detected</p>
-        </div>
-      ) : (
-        <div className="alerts-list">
-          {alertMachines.map((machine) => (
-            <div key={machine.id} className={`alert-item ${getAlertClass(machine.status)}`}>
-              <div className="alert-icon">
-                {machine.status === 'Critical' ? '🚨' : '⚠️'}
-              </div>
-              <div className="alert-content">
-                <h4>{machine.name} - {machine.status}</h4>
-                <p>High failure risk detected. Check sensors.</p>
-                <span className="alert-time">
-                  {new Date(machine.lastUpdate).toLocaleTimeString()}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'Just now';
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return 'Just now';
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  return (
+    <Card elevation={0} sx={{ height: '100%', border: '1px solid', borderColor: 'divider' }}>
+      <CardContent sx={{ p: 2 }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
+            Active Alerts
+          </Typography>
+          {alerts.length > 0 && (
+            <Chip 
+              label={alerts.length} 
+              color="error" 
+              size="small"
+              sx={{ fontWeight: 700 }}
+            />
+          )}
+        </Box>
+
+        {/* Alerts List */}
+        {alerts.length === 0 ? (
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'center', 
+              justifyContent: 'center',
+              py: 4,
+              color: 'text.secondary',
+            }}
+          >
+            <CheckCircleIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
+            <Typography variant="body2" fontWeight={500}>
+              ALL SYSTEMS NORMAL
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              No active alerts
+            </Typography>
+          </Box>
+        ) : (
+          <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {alerts.map((alert, index) => (
+              <ListItem key={index} disablePadding>
+                <Alert
+                  severity={getSeverityColor(alert.severity)}
+                  icon={getSeverityIcon(alert.severity)}
+                  sx={{ 
+                    width: '100%', 
+                    borderRadius: 2,
+                    '& .MuiAlert-message': { width: '100%' },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>
+                        {alert.machine || 'Unknown Machine'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {alert.message || 'Alert triggered'}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', ml: 2 }}>
+                      {formatTimestamp(alert.timestamp)}
+                    </Typography>
+                  </Box>
+                </Alert>
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

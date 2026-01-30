@@ -1,93 +1,137 @@
 /**
- * Fleet Statistics Component
- * Displays overall fleet health metrics
+ * Fleet Statistics Component - Material UI Version
  */
 
 import React from 'react';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Grid,
+  Chip,
+  Paper,
+} from '@mui/material';
+import {
+  Factory as FactoryIcon,
+  Favorite as HealthIcon,
+  Warning as RiskIcon,
+  CheckCircle as HealthyIcon,
+  Error as CriticalIcon,
+  Info as WarningIcon,
+  Sensors as SensorsIcon,
+} from '@mui/icons-material';
 
 const FleetStats = ({ stats, simulationMode, serialConnected }) => {
   const statCards = [
     {
-      label: 'Total Machines',
+      label: 'TOTAL MACHINES',
       value: stats.totalMachines,
-      icon: '🏭',
-      color: 'var(--color-info)'
+      icon: <FactoryIcon sx={{ fontSize: 32 }} />,
+      color: '#1565c0',
+      bgColor: 'rgba(21, 101, 192, 0.1)',
     },
     {
-      label: 'Avg Health Score',
+      label: 'AVG HEALTH SCORE',
       value: `${stats.avgHealthScore.toFixed(1)}%`,
-      icon: '💪',
-      color: stats.avgHealthScore >= 70 ? 'var(--color-success)' : stats.avgHealthScore >= 50 ? 'var(--color-warning)' : 'var(--color-danger)'
+      icon: <HealthIcon sx={{ fontSize: 32 }} />,
+      color: stats.avgHealthScore >= 70 ? '#2e7d32' : stats.avgHealthScore >= 50 ? '#f57c00' : '#c62828',
+      bgColor: stats.avgHealthScore >= 70 ? 'rgba(46, 125, 50, 0.1)' : stats.avgHealthScore >= 50 ? 'rgba(245, 124, 0, 0.1)' : 'rgba(198, 40, 40, 0.1)',
     },
     {
-      label: 'Avg Failure Risk',
+      label: 'AVG FAILURE RISK',
       value: `${stats.avgFailureRisk.toFixed(1)}%`,
-      icon: '📊',
-      color: stats.avgFailureRisk < 30 ? 'var(--color-success)' : stats.avgFailureRisk < 50 ? 'var(--color-warning)' : 'var(--color-danger)'
-    }
+      icon: <RiskIcon sx={{ fontSize: 32 }} />,
+      color: stats.avgFailureRisk < 30 ? '#2e7d32' : stats.avgFailureRisk < 50 ? '#f57c00' : '#c62828',
+      bgColor: stats.avgFailureRisk < 30 ? 'rgba(46, 125, 50, 0.1)' : stats.avgFailureRisk < 50 ? 'rgba(245, 124, 0, 0.1)' : 'rgba(198, 40, 40, 0.1)',
+    },
   ];
 
   const statusCounts = [
-    { label: 'Critical', value: stats.criticalCount, color: 'var(--color-danger)', icon: '🚨' },
-    { label: 'Warning', value: stats.warningCount, color: 'var(--color-warning)', icon: '⚠️' },
-    { label: 'Healthy', value: stats.healthyCount, color: 'var(--color-success)', icon: '✅' }
+    { label: 'CRITICAL', value: stats.criticalCount, color: '#c62828', icon: <CriticalIcon /> },
+    { label: 'WARNING', value: stats.warningCount, color: '#f57c00', icon: <WarningIcon /> },
+    { label: 'HEALTHY', value: stats.healthyCount, color: '#2e7d32', icon: <HealthyIcon /> },
   ];
 
   return (
-    <div className="card fleet-stats">
-      <div className="card-header">
-        <h3 className="card-title">
-          <span className="icon">📈</span> Fleet Overview
-        </h3>
-        
-        {/* Connection Status */}
-        <div className="header-status">
-            <span className={`status-indicator ${!serialConnected ? 'simulation' : ''} pulse`}></span>
-            {serialConnected ? 'Live Sensor' : 'Simulation Mode'}
-        </div>
-      </div>
+    <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
+      <CardContent sx={{ p: 3 }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
+            Fleet Overview
+          </Typography>
+          <Chip
+            icon={<SensorsIcon />}
+            label={serialConnected ? 'Live Sensor' : 'Simulation Mode'}
+            color={serialConnected ? 'success' : 'info'}
+            size="small"
+            variant="filled"
+          />
+        </Box>
 
-      <div className="stats-grid">
-        {statCards.map((stat, index) => (
-          <div key={index} style={{
-            background: 'var(--bg-app)',
-            padding: 16,
-            borderRadius: 'var(--radius-md)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 16,
-            border: '1px solid var(--border-subtle)'
-          }}>
-            <span style={{ fontSize: '1.5rem', background: 'rgba(255,255,255,0.05)', padding: 10, borderRadius: 'var(--radius-sm)' }}>
-              {stat.icon}
-            </span>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                {stat.label}
-              </div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: stat.color }}>
-                {stat.value}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+        {/* Stats Cards */}
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          {statCards.map((stat, index) => (
+            <Grid size={{ xs: 12, md: 4 }} key={index}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  bgcolor: stat.bgColor,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: stat.color,
+                  },
+                }}
+              >
+                <Box sx={{ color: stat.color }}>
+                  {stat.icon}
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    {stat.label}
+                  </Typography>
+                  <Typography variant="h5" fontWeight={700} sx={{ color: stat.color }}>
+                    {stat.value}
+                  </Typography>
+                </Box>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 12 }}>
-         {statusCounts.map((item, idx) => (
-           <div key={idx} style={{
-             textAlign: 'center',
-             padding: '8px',
-             background: 'rgba(255,255,255,0.02)',
-             borderRadius: 'var(--radius-sm)',
-             borderTop: `2px solid ${item.color}`
-           }}>
-             <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{item.value}</div>
-             <div style={{ fontSize: '0.75rem', color: item.color, fontWeight: 500 }}>{item.label}</div>
-           </div>
-         ))}
-      </div>
-    </div>
+        {/* Status Counts */}
+        <Grid container spacing={2}>
+          {statusCounts.map((item, idx) => (
+            <Grid size={4} key={idx}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  textAlign: 'center',
+                  bgcolor: 'background.default',
+                  borderRadius: 2,
+                  borderTop: `4px solid ${item.color}`,
+                }}
+              >
+                <Typography variant="h4" fontWeight={800} color="text.primary">
+                  {item.value}
+                </Typography>
+                <Typography variant="body2" fontWeight={600} sx={{ color: item.color }}>
+                  {item.label}
+                </Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </CardContent>
+    </Card>
   );
 };
 

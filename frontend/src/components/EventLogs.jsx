@@ -1,82 +1,130 @@
 /**
- * Event Logs Component
- * Displays last 5 anomaly logs with time, machine, event, and severity
+ * Event Logs Component - Material UI Version
  */
 
 import React from 'react';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+} from '@mui/material';
+import { History as HistoryIcon } from '@mui/icons-material';
 
-const EventLogs = ({ logs }) => {
-  const getSeverityStyle = (severity) => {
-    switch (severity) {
-      case 'CRITICAL':
-        return { color: 'var(--color-danger)', icon: '🚨' };
-      case 'WARNING':
-        return { color: 'var(--color-warning)', icon: '⚠️' };
-      case 'INFO':
-        return { color: 'var(--color-info)', icon: 'ℹ️' };
+const EventLogs = ({ logs = [] }) => {
+  const getSeverityColor = (severity) => {
+    switch (severity?.toLowerCase()) {
+      case 'high':
+      case 'critical':
+        return 'error';
+      case 'medium':
+      case 'warning':
+        return 'warning';
+      case 'low':
+        return 'success';
+      case 'info':
+        return 'info';
       default:
-        return { color: 'var(--text-muted)', icon: '📋' };
+        return 'default';
     }
   };
 
-  return (
-    <div className="card event-logs" style={{ marginTop: 24 }}>
-      <div className="card-header">
-        <h3 className="card-title">
-          <span className="icon">📋</span> Event Logs
-        </h3>
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-          Last {logs.length} events
-        </span>
-      </div>
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'N/A';
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
-      {logs.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">📭</span>
-          <p style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>No events logged</p>
-          <p style={{ fontSize: '0.75rem' }}>Anomalies will appear here</p>
-        </div>
-      ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-            <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-subtle)' }}>
-                <th style={{ padding: '12px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 600 }}>Time</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 600 }}>Machine</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 600 }}>Severity</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 600 }}>Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log, index) => {
-                const style = getSeverityStyle(log.severity);
-                return (
-                  <tr key={index} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                    <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </td>
-                    <td style={{ padding: '12px', fontWeight: 500 }}>{log.machineName}</td>
-                    <td style={{ padding: '12px' }}>
-                      <span style={{ 
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        color: style.color, fontWeight: 600,
-                        background: `rgba(${style.color === 'var(--color-danger)' ? '239, 68, 68' : '245, 158, 11'}, 0.1)`,
-                        padding: '4px 8px', borderRadius: '4px'
-                      }}>
-                        {style.icon} {log.severity}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>
-                      {log.message}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+  return (
+    <Card elevation={0} sx={{ height: '100%', border: '1px solid', borderColor: 'divider' }}>
+      <CardContent sx={{ p: 2 }}>
+        {/* Header */}
+        <Typography variant="h6" fontWeight={600} sx={{ mb: 2, textTransform: 'uppercase', letterSpacing: 1 }}>
+          Event Logs
+        </Typography>
+
+        {/* Table */}
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '2px solid', borderColor: 'divider' }}>
+                  Time
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '2px solid', borderColor: 'divider' }}>
+                  Machine
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '2px solid', borderColor: 'divider' }}>
+                  Event
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '2px solid', borderColor: 'divider' }}>
+                  Severity
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {logs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                    <HistoryIcon sx={{ fontSize: 32, mb: 1, opacity: 0.5 }} />
+                    <Typography variant="body2">No events recorded</Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                logs.map((log, index) => (
+                  <TableRow 
+                    key={index}
+                    sx={{ 
+                      '&:hover': { bgcolor: 'grey.50' },
+                      '&:last-child td': { border: 0 },
+                    }}
+                  >
+                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'text.secondary' }}>
+                      {formatTimestamp(log.timestamp)}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={500}>
+                        {log.machine || 'Unknown'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        {log.event || log.message || 'Event logged'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={log.severity || 'info'}
+                        color={getSeverityColor(log.severity)}
+                        size="small"
+                        sx={{ 
+                          fontWeight: 600, 
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </CardContent>
+    </Card>
   );
 };
 
