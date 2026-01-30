@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Html, Grid, PointerLockControls } from '@react-three/drei';
+import { OrbitControls, Html, Grid } from '@react-three/drei';
 import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 
@@ -8,9 +8,10 @@ import * as THREE from 'three';
 // ============================================
 
 const FACTORY_LAYOUT = {
-  'motor-a': { position: [-6, 0, 2], type: 'motor', label: 'M-001' },
-  'pump-b': { position: [0, 0, 2], type: 'pump', label: 'P-002' },
-  'compressor-c': { position: [6, 0, 2], type: 'compressor', label: 'C-003' },
+  'vibration-motor': { position: [-12, 0, 2], type: 'motor', label: 'VIB-001', sensorType: 'VIB' },
+  'temp-pump': { position: [-4, 0, 2], type: 'pump', label: 'TEMP-002', sensorType: 'TEMP' },
+  'humidity-compressor': { position: [4, 0, 2], type: 'compressor', label: 'HUM-003', sensorType: 'HUM' },
+  'gas-detector': { position: [12, 0, 2], type: 'gasDetector', label: 'GAS-004', sensorType: 'GAS' },
 };
 
 // ============================================
@@ -24,7 +25,7 @@ const CAMERA_MODES = {
 };
 
 // First-Person Walker Controller
-function FirstPersonController({ isActive, playerRef }) {
+function FirstPersonController({ isActive }) {
   const { camera } = useThree();
   const velocity = useRef(new THREE.Vector3());
   const direction = useRef(new THREE.Vector3());
@@ -78,7 +79,6 @@ function FirstPersonController({ isActive, playerRef }) {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('pointerlockchange', handlePointerLockChange);
     
-    // Set initial camera position for walk mode
     camera.position.set(0, PLAYER_HEIGHT, 12);
     euler.current.set(0, 0, 0);
     camera.quaternion.setFromEuler(euler.current);
@@ -119,13 +119,6 @@ function FirstPersonController({ isActive, playerRef }) {
     camera.position.x = Math.max(BOUNDS.minX, Math.min(BOUNDS.maxX, newX));
     camera.position.z = Math.max(BOUNDS.minZ, Math.min(BOUNDS.maxZ, newZ));
     camera.position.y = PLAYER_HEIGHT;
-    
-    // Update player visual position
-    if (playerRef.current) {
-      playerRef.current.position.copy(camera.position);
-      playerRef.current.position.y = 0;
-      playerRef.current.rotation.y = euler.current.y + Math.PI;
-    }
   });
   
   return null;
@@ -188,7 +181,6 @@ function DroneController({ isActive }) {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('pointerlockchange', handlePointerLockChange);
     
-    // Set initial camera position for drone mode
     camera.position.set(0, 10, 20);
     euler.current.set(-0.3, 0, 0);
     camera.quaternion.setFromEuler(euler.current);
@@ -233,134 +225,6 @@ function DroneController({ isActive }) {
   return null;
 }
 
-// Player Character Model (visible in orbit mode)
-function PlayerCharacter({ position, visible }) {
-  const group = useRef();
-  
-  if (!visible) return null;
-  
-  return (
-    <group ref={group} position={position}>
-      {/* Body */}
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <capsuleGeometry args={[0.25, 0.6, 8, 16]} />
-        <meshStandardMaterial color="#3b82f6" roughness={0.6} />
-      </mesh>
-      
-      {/* Head */}
-      <mesh position={[0, 1.55, 0]} castShadow>
-        <sphereGeometry args={[0.18, 16, 16]} />
-        <meshStandardMaterial color="#fcd34d" roughness={0.5} />
-      </mesh>
-      
-      {/* Hard hat */}
-      <mesh position={[0, 1.7, 0]} castShadow>
-        <cylinderGeometry args={[0.22, 0.2, 0.08, 16]} />
-        <meshStandardMaterial color="#fbbf24" roughness={0.4} />
-      </mesh>
-      <mesh position={[0, 1.66, 0]} castShadow>
-        <cylinderGeometry args={[0.28, 0.28, 0.04, 16]} />
-        <meshStandardMaterial color="#fbbf24" roughness={0.4} />
-      </mesh>
-      
-      {/* Safety Vest */}
-      <mesh position={[0, 0.95, 0.13]} castShadow>
-        <boxGeometry args={[0.45, 0.5, 0.08]} />
-        <meshStandardMaterial color="#f97316" roughness={0.7} emissive="#f97316" emissiveIntensity={0.2} />
-      </mesh>
-      
-      {/* Reflective stripes */}
-      <mesh position={[0, 1.05, 0.18]}>
-        <boxGeometry args={[0.4, 0.04, 0.01]} />
-        <meshStandardMaterial color="#e5e7eb" emissive="#e5e7eb" emissiveIntensity={0.5} />
-      </mesh>
-      <mesh position={[0, 0.85, 0.18]}>
-        <boxGeometry args={[0.4, 0.04, 0.01]} />
-        <meshStandardMaterial color="#e5e7eb" emissive="#e5e7eb" emissiveIntensity={0.5} />
-      </mesh>
-      
-      {/* Legs */}
-      <mesh position={[-0.1, 0.35, 0]} castShadow>
-        <capsuleGeometry args={[0.08, 0.4, 4, 8]} />
-        <meshStandardMaterial color="#1e3a5f" roughness={0.8} />
-      </mesh>
-      <mesh position={[0.1, 0.35, 0]} castShadow>
-        <capsuleGeometry args={[0.08, 0.4, 4, 8]} />
-        <meshStandardMaterial color="#1e3a5f" roughness={0.8} />
-      </mesh>
-      
-      {/* Boots */}
-      <mesh position={[-0.1, 0.06, 0.03]} castShadow>
-        <boxGeometry args={[0.12, 0.12, 0.2]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.9} />
-      </mesh>
-      <mesh position={[0.1, 0.06, 0.03]} castShadow>
-        <boxGeometry args={[0.12, 0.12, 0.2]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.9} />
-      </mesh>
-    </group>
-  );
-}
-
-// Drone Visual Model
-function DroneModel({ visible, cameraRef }) {
-  const group = useRef();
-  const propellers = useRef([]);
-  
-  useFrame(() => {
-    if (!visible || !group.current) return;
-    // Spin propellers
-    propellers.current.forEach((p, i) => {
-      if (p) p.rotation.y += 0.5 * (i % 2 === 0 ? 1 : -1);
-    });
-  });
-  
-  if (!visible) return null;
-  
-  return (
-    <group ref={group} position={[0, 8, 15]}>
-      {/* Drone body */}
-      <mesh castShadow>
-        <boxGeometry args={[0.4, 0.1, 0.4]} />
-        <meshStandardMaterial color="#1f2937" metalness={0.8} roughness={0.2} />
-      </mesh>
-      
-      {/* Camera dome */}
-      <mesh position={[0, -0.08, 0.1]}>
-        <sphereGeometry args={[0.06, 16, 16]} />
-        <meshStandardMaterial color="#0ea5e9" metalness={0.9} roughness={0.1} />
-      </mesh>
-      
-      {/* Arms and propellers */}
-      {[[-0.3, 0, -0.3], [0.3, 0, -0.3], [-0.3, 0, 0.3], [0.3, 0, 0.3]].map((pos, i) => (
-        <group key={i} position={pos}>
-          {/* Arm */}
-          <mesh>
-            <cylinderGeometry args={[0.02, 0.02, 0.15, 8]} />
-            <meshStandardMaterial color="#374151" />
-          </mesh>
-          {/* Motor */}
-          <mesh position={[0, 0.05, 0]}>
-            <cylinderGeometry args={[0.04, 0.04, 0.05, 8]} />
-            <meshStandardMaterial color="#4b5563" metalness={0.7} />
-          </mesh>
-          {/* Propeller */}
-          <mesh ref={el => propellers.current[i] = el} position={[0, 0.09, 0]}>
-            <boxGeometry args={[0.25, 0.01, 0.03]} />
-            <meshStandardMaterial color="#9ca3af" transparent opacity={0.7} />
-          </mesh>
-        </group>
-      ))}
-      
-      {/* LEDs */}
-      <pointLight position={[0.3, 0, 0.3]} color="#22c55e" intensity={0.5} distance={2} />
-      <pointLight position={[-0.3, 0, 0.3]} color="#22c55e" intensity={0.5} distance={2} />
-      <pointLight position={[0.3, 0, -0.3]} color="#ef4444" intensity={0.5} distance={2} />
-      <pointLight position={[-0.3, 0, -0.3]} color="#ef4444" intensity={0.5} distance={2} />
-    </group>
-  );
-}
-
 // ============================================
 // UTILITY FUNCTIONS
 // ============================================
@@ -385,13 +249,11 @@ function getMachineColor(failureRisk) {
 function FactoryFloor() {
   return (
     <group>
-      {/* Main concrete floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[50, 35]} />
         <meshStandardMaterial color="#475569" roughness={0.9} metalness={0.1} />
       </mesh>
       
-      {/* Floor grid */}
       <Grid
         position={[0, 0.01, 0]}
         args={[50, 35]}
@@ -406,32 +268,19 @@ function FactoryFloor() {
         followCamera={false}
       />
       
-      {/* Yellow safety walkways */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, -10]}>
         <planeGeometry args={[50, 2]} />
         <meshStandardMaterial color="#ca8a04" roughness={0.8} opacity={0.6} transparent />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 10]}>
-        <planeGeometry args={[50, 2]} />
-        <meshStandardMaterial color="#ca8a04" roughness={0.8} opacity={0.6} transparent />
-      </mesh>
-      
-      {/* Hazard stripes near conveyors */}
-      {[-18, -12, -6, 0, 6, 12, 18].map((x, i) => (
-        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.02, -4]}>
-          <planeGeometry args={[0.15, 8]} />
-          <meshBasicMaterial color="#eab308" opacity={0.5} transparent />
-        </mesh>
-      ))}
     </group>
   );
 }
 
 // ============================================
-// PIPE COMPONENT
+// GAS PIPE WITH LEAK DETECTION
 // ============================================
 
-function Pipe({ start, end, radius = 0.06, color = '#fbbf24' }) {
+function GasPipe({ start, end, radius = 0.08, hasLeak = false, valveClosed = false, onValveClose }) {
   const startVec = new THREE.Vector3(...start);
   const endVec = new THREE.Vector3(...end);
   const direction = new THREE.Vector3().subVectors(endVec, startVec);
@@ -441,496 +290,144 @@ function Pipe({ start, end, radius = 0.06, color = '#fbbf24' }) {
   const quaternion = new THREE.Quaternion();
   quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
   const euler = new THREE.Euler().setFromQuaternion(quaternion);
+  
+  const leakRef = useRef();
+  const valveRef = useRef();
+  
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+    if (leakRef.current && hasLeak && !valveClosed) {
+      leakRef.current.scale.setScalar(1 + Math.sin(t * 10) * 0.3);
+      leakRef.current.material.opacity = 0.6 + Math.sin(t * 8) * 0.3;
+    }
+    if (valveRef.current && valveClosed) {
+      valveRef.current.rotation.z = Math.PI / 2;
+    }
+  });
+
+  const pipeColor = hasLeak && !valveClosed ? '#ef4444' : valveClosed ? '#6b7280' : '#eab308';
 
   return (
     <group>
+      {/* Main pipe */}
       <mesh position={midpoint.toArray()} rotation={euler}>
         <cylinderGeometry args={[radius, radius, length, 16]} />
-        <meshStandardMaterial color={color} roughness={0.3} metalness={0.8} />
+        <meshStandardMaterial color={pipeColor} roughness={0.3} metalness={0.8} />
       </mesh>
+      
+      {/* Pipe joints */}
       <mesh position={start}>
         <sphereGeometry args={[radius * 1.4, 12, 12]} />
-        <meshStandardMaterial color={color} roughness={0.3} metalness={0.8} />
+        <meshStandardMaterial color={pipeColor} roughness={0.3} metalness={0.8} />
       </mesh>
       <mesh position={end}>
         <sphereGeometry args={[radius * 1.4, 12, 12]} />
-        <meshStandardMaterial color={color} roughness={0.3} metalness={0.8} />
+        <meshStandardMaterial color={pipeColor} roughness={0.3} metalness={0.8} />
       </mesh>
-    </group>
-  );
-}
-
-// ============================================
-// COMPREHENSIVE PIPE NETWORK
-// ============================================
-
-function PipeNetwork() {
-  const pipeRuns = [
-    // === MAIN HORIZONTAL RUNS (ceiling level) ===
-    // Yellow - main process line
-    { start: [-24, 5.5, -6], end: [24, 5.5, -6], color: '#fbbf24', radius: 0.1 },
-    // Blue - cooling water
-    { start: [-24, 5.8, -6], end: [24, 5.8, -6], color: '#3b82f6', radius: 0.07 },
-    // Red - steam/hot
-    { start: [-24, 5.2, -6], end: [24, 5.2, -6], color: '#dc2626', radius: 0.05 },
-    // Green - compressed air
-    { start: [-24, 5.5, 6], end: [24, 5.5, 6], color: '#22c55e', radius: 0.08 },
-    // Purple - hydraulic
-    { start: [-24, 5.8, 6], end: [24, 5.8, 6], color: '#7c3aed', radius: 0.05 },
-    
-    // === VERTICAL DROPS TO MACHINES ===
-    // To Motor area
-    { start: [-6, 5.5, -6], end: [-6, 3, -6], color: '#fbbf24', radius: 0.06 },
-    { start: [-6, 3, -6], end: [-6, 3, 2], color: '#fbbf24', radius: 0.06 },
-    { start: [-6, 5.8, -6], end: [-6, 2.5, -6], color: '#3b82f6', radius: 0.05 },
-    { start: [-6, 2.5, -6], end: [-6, 2.5, 2], color: '#3b82f6', radius: 0.05 },
-    
-    // To Pump area
-    { start: [0, 5.5, -6], end: [0, 3.2, -6], color: '#fbbf24', radius: 0.06 },
-    { start: [0, 3.2, -6], end: [0, 3.2, 2], color: '#fbbf24', radius: 0.06 },
-    { start: [0, 5.2, -6], end: [0, 2.8, -6], color: '#dc2626', radius: 0.04 },
-    { start: [0, 2.8, -6], end: [0, 2.8, 2], color: '#dc2626', radius: 0.04 },
-    
-    // To Compressor area  
-    { start: [6, 5.5, -6], end: [6, 3, -6], color: '#fbbf24', radius: 0.06 },
-    { start: [6, 3, -6], end: [6, 3, 2], color: '#fbbf24', radius: 0.06 },
-    { start: [6, 5.5, 6], end: [6, 2.5, 6], color: '#22c55e', radius: 0.05 },
-    { start: [6, 2.5, 6], end: [6, 2.5, 2], color: '#22c55e', radius: 0.05 },
-    
-    // === CROSS CONNECTIONS ===
-    { start: [-12, 5.5, -6], end: [-12, 5.5, 6], color: '#94a3b8', radius: 0.05 },
-    { start: [12, 5.5, -6], end: [12, 5.5, 6], color: '#94a3b8', radius: 0.05 },
-    
-    // === TO STORAGE TANKS ===
-    { start: [18, 5.5, 6], end: [18, 4, 6], color: '#22c55e', radius: 0.07 },
-    { start: [18, 4, 6], end: [18, 4, 0], color: '#22c55e', radius: 0.07 },
-    { start: [21, 5.5, 6], end: [21, 3.5, 6], color: '#22c55e', radius: 0.06 },
-    { start: [21, 3.5, 6], end: [21, 3.5, 0], color: '#22c55e', radius: 0.06 },
-  ];
-
-  return (
-    <group>
-      {pipeRuns.map((pipe, i) => (
-        <Pipe key={i} {...pipe} />
-      ))}
       
-      {/* Pipe rack supports - horizontal beams */}
-      {[-20, -10, 0, 10, 20].map((x, i) => (
-        <group key={`rack-${i}`}>
-          {/* Vertical supports */}
-          <mesh position={[x, 3, -6]}>
-            <boxGeometry args={[0.15, 6, 0.15]} />
-            <meshStandardMaterial color="#78716c" roughness={0.6} metalness={0.4} />
+      {/* Gas leak visualization */}
+      {hasLeak && !valveClosed && (
+        <group position={midpoint.toArray()}>
+          <mesh ref={leakRef}>
+            <sphereGeometry args={[0.3, 16, 16]} />
+            <meshBasicMaterial color="#22c55e" transparent opacity={0.5} />
           </mesh>
-          <mesh position={[x, 3, 6]}>
-            <boxGeometry args={[0.15, 6, 0.15]} />
-            <meshStandardMaterial color="#78716c" roughness={0.6} metalness={0.4} />
-          </mesh>
-          {/* Horizontal cross member */}
-          <mesh position={[x, 5.5, 0]}>
-            <boxGeometry args={[0.12, 0.12, 12]} />
-            <meshStandardMaterial color="#78716c" roughness={0.6} metalness={0.4} />
-          </mesh>
-          {/* Pipe support brackets */}
-          <mesh position={[x, 5.5, -6]}>
-            <boxGeometry args={[0.6, 0.08, 0.3]} />
-            <meshStandardMaterial color="#64748b" roughness={0.5} metalness={0.5} />
-          </mesh>
-          <mesh position={[x, 5.5, 6]}>
-            <boxGeometry args={[0.6, 0.08, 0.3]} />
-            <meshStandardMaterial color="#64748b" roughness={0.5} metalness={0.5} />
-          </mesh>
-        </group>
-      ))}
-      
-      {/* Pipe labels/tags */}
-      {[
-        { pos: [-20, 5.5, -6.3], label: 'PROCESS', color: '#fbbf24' },
-        { pos: [-20, 5.8, -6.3], label: 'CW', color: '#3b82f6' },
-        { pos: [-20, 5.5, 6.3], label: 'AIR', color: '#22c55e' },
-      ].map((tag, i) => (
-        <mesh key={`tag-${i}`} position={tag.pos}>
-          <boxGeometry args={[0.4, 0.15, 0.02]} />
-          <meshBasicMaterial color={tag.color} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-// ============================================
-// CONVEYOR BELT SYSTEM
-// ============================================
-
-function ConveyorBelt({ start, end, width = 0.7, color = '#1d4ed8' }) {
-  const startVec = new THREE.Vector3(...start);
-  const endVec = new THREE.Vector3(...end);
-  const direction = new THREE.Vector3().subVectors(endVec, startVec);
-  const length = direction.length();
-  const midpoint = startVec.clone().add(direction.clone().multiplyScalar(0.5));
-  const angle = Math.atan2(direction.x, direction.z);
-  
-  const beltRef = useRef();
-  
-  useFrame(() => {
-    if (beltRef.current?.material?.map) {
-      beltRef.current.material.map.offset.y += 0.008;
-    }
-  });
-
-  const beltTexture = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#27272a';
-    ctx.fillRect(0, 0, 64, 256);
-    for (let i = 0; i < 20; i++) {
-      ctx.fillStyle = '#404040';
-      ctx.fillRect(0, i * 13, 64, 3);
-    }
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1, length * 0.5);
-    return texture;
-  }, [length]);
-
-  const legCount = Math.max(2, Math.floor(length / 3));
-  
-  return (
-    <group position={midpoint.toArray()} rotation={[0, angle, 0]}>
-      {/* Belt surface */}
-      <mesh ref={beltRef} position={[0, 0.75, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[width, length]} />
-        <meshStandardMaterial map={beltTexture} roughness={0.9} />
-      </mesh>
-      
-      {/* Frame - main body */}
-      <mesh position={[0, 0.4, 0]}>
-        <boxGeometry args={[width + 0.15, 0.7, length]} />
-        <meshStandardMaterial color={color} roughness={0.4} metalness={0.6} />
-      </mesh>
-      
-      {/* Side rails */}
-      <mesh position={[width / 2 + 0.06, 0.82, 0]}>
-        <boxGeometry args={[0.06, 0.2, length]} />
-        <meshStandardMaterial color="#60a5fa" roughness={0.3} metalness={0.7} />
-      </mesh>
-      <mesh position={[-width / 2 - 0.06, 0.82, 0]}>
-        <boxGeometry args={[0.06, 0.2, length]} />
-        <meshStandardMaterial color="#60a5fa" roughness={0.3} metalness={0.7} />
-      </mesh>
-      
-      {/* End rollers */}
-      <mesh position={[0, 0.75, length / 2 - 0.1]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.12, 0.12, width, 16]} />
-        <meshStandardMaterial color="#71717a" roughness={0.4} metalness={0.7} />
-      </mesh>
-      <mesh position={[0, 0.75, -length / 2 + 0.1]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.12, 0.12, width, 16]} />
-        <meshStandardMaterial color="#71717a" roughness={0.4} metalness={0.7} />
-      </mesh>
-      
-      {/* Support legs */}
-      {Array.from({ length: legCount }, (_, i) => {
-        const z = -length / 2 + length / (legCount + 1) * (i + 1);
-        return (
-          <group key={i}>
-            <mesh position={[width / 2 + 0.1, 0.02, z]}>
-              <boxGeometry args={[0.06, 0.04, 0.06]} />
-              <meshStandardMaterial color="#1f2937" roughness={0.8} />
-            </mesh>
-            <mesh position={[-width / 2 - 0.1, 0.02, z]}>
-              <boxGeometry args={[0.06, 0.04, 0.06]} />
-              <meshStandardMaterial color="#1f2937" roughness={0.8} />
-            </mesh>
-            {/* Diagonal braces */}
-            <mesh position={[width / 2 + 0.15, 0.2, z]} rotation={[0, 0, 0.3]}>
-              <boxGeometry args={[0.03, 0.35, 0.03]} />
-              <meshStandardMaterial color="#94a3b8" roughness={0.5} metalness={0.5} />
-            </mesh>
-            <mesh position={[-width / 2 - 0.15, 0.2, z]} rotation={[0, 0, -0.3]}>
-              <boxGeometry args={[0.03, 0.35, 0.03]} />
-              <meshStandardMaterial color="#94a3b8" roughness={0.5} metalness={0.5} />
-            </mesh>
-          </group>
-        );
-      })}
-      
-      {/* Motor drive unit */}
-      <mesh position={[width / 2 + 0.25, 0.5, -length / 2 + 0.5]}>
-        <boxGeometry args={[0.3, 0.25, 0.4]} />
-        <meshStandardMaterial color="#374151" roughness={0.5} metalness={0.5} />
-      </mesh>
-    </group>
-  );
-}
-
-function ConveyorSystem() {
-  return (
-    <group>
-      {/* Main line */}
-      <ConveyorBelt start={[-22, 0, -4]} end={[22, 0, -4]} width={0.9} color="#1d4ed8" />
-      
-      {/* Secondary lines */}
-      <ConveyorBelt start={[-15, 0, 5]} end={[8, 0, 5]} width={0.6} color="#1e40af" />
-      
-      {/* Branch conveyor */}
-      <ConveyorBelt start={[10, 0, 5]} end={[10, 0, -4]} width={0.5} color="#1e40af" />
-      
-      {/* Output conveyor */}
-      <ConveyorBelt start={[16, 0, -8]} end={[24, 0, -8]} width={0.7} color="#1d4ed8" />
-      
-      {/* Items on conveyor (boxes) */}
-      {[
-        { pos: [-18, 1.05, -4], size: [0.4, 0.3, 0.3], color: '#854d0e' },
-        { pos: [-12, 1.05, -4], size: [0.35, 0.35, 0.35], color: '#78350f' },
-        { pos: [-5, 1.05, -4], size: [0.45, 0.25, 0.35], color: '#92400e' },
-        { pos: [3, 1.05, -4], size: [0.4, 0.4, 0.4], color: '#713f12' },
-        { pos: [15, 1.05, -4], size: [0.35, 0.3, 0.35], color: '#854d0e' },
-        { pos: [-8, 1, 5], size: [0.3, 0.25, 0.3], color: '#78350f' },
-        { pos: [0, 1, 5], size: [0.35, 0.3, 0.35], color: '#92400e' },
-      ].map((box, i) => (
-        <mesh key={i} position={box.pos} castShadow>
-          <boxGeometry args={box.size} />
-          <meshStandardMaterial color={box.color} roughness={0.85} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-// ============================================
-// ROBOTIC ARM (Animated)
-// ============================================
-
-function RoboticArm({ position, color = '#f97316', speed = 1 }) {
-  const baseRef = useRef();
-  const shoulderRef = useRef();
-  const elbowRef = useRef();
-  const wristRef = useRef();
-  
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime() * speed;
-    if (baseRef.current) baseRef.current.rotation.y = Math.sin(t * 0.4) * 1.2;
-    if (shoulderRef.current) shoulderRef.current.rotation.z = Math.sin(t * 0.6) * 0.4 - 0.3;
-    if (elbowRef.current) elbowRef.current.rotation.z = Math.sin(t * 0.8 + 1) * 0.5 + 0.5;
-    if (wristRef.current) wristRef.current.rotation.x = Math.sin(t * 1.2) * 0.6;
-  });
-
-  return (
-    <group position={position}>
-      {/* Heavy base plate */}
-      <mesh position={[0, 0.05, 0]} castShadow>
-        <cylinderGeometry args={[0.6, 0.7, 0.1, 32]} />
-        <meshStandardMaterial color="#18181b" roughness={0.7} metalness={0.4} />
-      </mesh>
-      
-      {/* Rotating base */}
-      <group ref={baseRef}>
-        <mesh position={[0, 0.25, 0]} castShadow>
-          <cylinderGeometry args={[0.4, 0.5, 0.3, 24]} />
-          <meshStandardMaterial color={color} roughness={0.4} metalness={0.6} />
-        </mesh>
-        
-        {/* Shoulder assembly */}
-        <group ref={shoulderRef} position={[0, 0.4, 0]}>
-          {/* Shoulder joint */}
-          <mesh position={[0, 0.15, 0]} castShadow>
-            <sphereGeometry args={[0.2, 16, 16]} />
-            <meshStandardMaterial color="#27272a" roughness={0.3} metalness={0.7} />
-          </mesh>
+          <pointLight color="#22c55e" intensity={2} distance={3} />
           
-          {/* Upper arm */}
-          <mesh position={[0, 0.7, 0]} castShadow>
-            <boxGeometry args={[0.18, 1, 0.18]} />
-            <meshStandardMaterial color={color} roughness={0.4} metalness={0.6} />
-          </mesh>
-          
-          {/* Elbow assembly */}
-          <group ref={elbowRef} position={[0, 1.2, 0]}>
-            <mesh castShadow>
-              <sphereGeometry args={[0.15, 16, 16]} />
-              <meshStandardMaterial color="#27272a" roughness={0.3} metalness={0.7} />
+          {/* Leak particles */}
+          {[...Array(8)].map((_, i) => (
+            <mesh key={i} position={[
+              Math.sin(i * 0.8) * 0.2,
+              0.1 + Math.random() * 0.3,
+              Math.cos(i * 0.8) * 0.2
+            ]}>
+              <sphereGeometry args={[0.05, 8, 8]} />
+              <meshBasicMaterial color="#4ade80" transparent opacity={0.7} />
             </mesh>
-            
-            {/* Forearm */}
-            <mesh position={[0.4, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-              <boxGeometry args={[0.14, 0.8, 0.14]} />
-              <meshStandardMaterial color={color} roughness={0.4} metalness={0.6} />
-            </mesh>
-            
-            {/* Wrist assembly */}
-            <group ref={wristRef} position={[0.8, 0, 0]}>
-              <mesh castShadow>
-                <cylinderGeometry args={[0.1, 0.1, 0.2, 16]} />
-                <meshStandardMaterial color="#52525b" roughness={0.4} metalness={0.6} />
-              </mesh>
-              
-              {/* Gripper */}
-              <mesh position={[0.15, 0.06, 0]} castShadow>
-                <boxGeometry args={[0.2, 0.025, 0.06]} />
-                <meshStandardMaterial color="#18181b" roughness={0.3} metalness={0.8} />
-              </mesh>
-              <mesh position={[0.15, -0.06, 0]} castShadow>
-                <boxGeometry args={[0.2, 0.025, 0.06]} />
-                <meshStandardMaterial color="#18181b" roughness={0.3} metalness={0.8} />
-              </mesh>
-            </group>
-          </group>
+          ))}
         </group>
-        
-        {/* Cable conduit */}
-        <mesh position={[0.25, 0.6, 0]}>
-          <cylinderGeometry args={[0.03, 0.03, 0.8, 8]} />
-          <meshStandardMaterial color="#1f2937" roughness={0.8} />
+      )}
+      
+      {/* Valve */}
+      <group position={midpoint.toArray()}>
+        <mesh ref={valveRef} rotation={[Math.PI / 2, 0, valveClosed ? Math.PI / 2 : 0]}>
+          <cylinderGeometry args={[0.15, 0.15, 0.05, 16]} />
+          <meshStandardMaterial color={valveClosed ? '#ef4444' : '#22c55e'} roughness={0.4} metalness={0.6} />
+        </mesh>
+        <mesh position={[0, 0.1, 0]}>
+          <boxGeometry args={[0.08, 0.15, 0.02]} />
+          <meshStandardMaterial color="#1f2937" roughness={0.5} metalness={0.5} />
         </mesh>
       </group>
       
-      {/* Control box */}
-      <mesh position={[0.7, 0.3, 0]} castShadow>
-        <boxGeometry args={[0.25, 0.5, 0.3]} />
-        <meshStandardMaterial color="#374151" roughness={0.6} metalness={0.4} />
-      </mesh>
+      {/* Warning label */}
+      {hasLeak && !valveClosed && (
+        <Html position={[midpoint.x, midpoint.y + 0.5, midpoint.z]} center>
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.95)',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: 8,
+            fontSize: 12,
+            fontWeight: 'bold',
+            animation: 'pulse 1s infinite',
+            cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(239, 68, 68, 0.5)'
+          }} onClick={onValveClose}>
+            ⚠️ GAS LEAK DETECTED!
+            <div style={{ fontSize: 10, marginTop: 4 }}>Click to close valve</div>
+          </div>
+        </Html>
+      )}
       
-      {/* Status light */}
-      <mesh position={[0.7, 0.6, 0]}>
-        <sphereGeometry args={[0.04, 12, 12]} />
-        <meshBasicMaterial color="#22c55e" />
-      </mesh>
-    </group>
-  );
-}
-
-// ============================================
-// STORAGE TANKS
-// ============================================
-
-function StorageTank({ position, height = 4, radius = 1, color = '#22c55e', label = '' }) {
-  return (
-    <group position={position}>
-      {/* Main tank body */}
-      <mesh position={[0, height / 2 + 0.3, 0]} castShadow>
-        <cylinderGeometry args={[radius, radius, height, 32]} />
-        <meshStandardMaterial color={color} roughness={0.35} metalness={0.7} />
-      </mesh>
-      
-      {/* Domed top */}
-      <mesh position={[0, height + 0.3, 0]} castShadow>
-        <sphereGeometry args={[radius, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color={color} roughness={0.35} metalness={0.7} />
-      </mesh>
-      
-      {/* Reinforcement rings */}
-      {[0.3, height * 0.35, height * 0.65, height * 0.9].map((y, i) => (
-        <mesh key={i} position={[0, y + 0.3, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[radius + 0.02, 0.04, 8, 32]} />
-          <meshStandardMaterial color="#64748b" roughness={0.4} metalness={0.6} />
-        </mesh>
-      ))}
-      
-      {/* Base/skirt */}
-      <mesh position={[0, 0.15, 0]} castShadow>
-        <cylinderGeometry args={[radius + 0.15, radius + 0.2, 0.3, 32]} />
-        <meshStandardMaterial color="#52525b" roughness={0.7} metalness={0.3} />
-      </mesh>
-      
-      {/* Ladder */}
-      {Array.from({ length: Math.floor(height * 3) }, (_, i) => (
-        <mesh key={i} position={[radius + 0.12, 0.4 + i * 0.35, 0]} castShadow>
-          <boxGeometry args={[0.04, 0.04, 0.25]} />
-          <meshStandardMaterial color="#a1a1aa" roughness={0.5} metalness={0.5} />
-        </mesh>
-      ))}
-      <mesh position={[radius + 0.12, height / 2 + 0.3, 0.15]}>
-        <boxGeometry args={[0.025, height, 0.025]} />
-        <meshStandardMaterial color="#a1a1aa" roughness={0.5} metalness={0.5} />
-      </mesh>
-      <mesh position={[radius + 0.12, height / 2 + 0.3, -0.15]}>
-        <boxGeometry args={[0.025, height, 0.025]} />
-        <meshStandardMaterial color="#a1a1aa" roughness={0.5} metalness={0.5} />
-      </mesh>
-      
-      {/* Level sight glass */}
-      <mesh position={[radius + 0.08, height / 2, 0.5]} castShadow>
-        <boxGeometry args={[0.06, height * 0.5, 0.12]} />
-        <meshStandardMaterial color="#0ea5e9" roughness={0.1} metalness={0.2} transparent opacity={0.7} />
-      </mesh>
-      
-      {/* Outlet valve */}
-      <mesh position={[radius, 0.5, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.08, 0.08, 0.25, 12]} />
-        <meshStandardMaterial color="#dc2626" roughness={0.4} metalness={0.6} />
-      </mesh>
-      
-      {/* Tank label */}
-      {label && (
-        <mesh position={[0, height * 0.7, radius + 0.02]}>
-          <planeGeometry args={[0.6, 0.3]} />
-          <meshBasicMaterial color="#1f2937" />
-        </mesh>
+      {valveClosed && (
+        <Html position={[midpoint.x, midpoint.y + 0.5, midpoint.z]} center>
+          <div style={{
+            background: 'rgba(34, 197, 94, 0.95)',
+            color: 'white',
+            padding: '6px 12px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 'bold'
+          }}>
+            ✓ VALVE CLOSED
+          </div>
+        </Html>
       )}
     </group>
   );
 }
 
 // ============================================
-// SAFETY CAGE / RAILING
+// GAS PIPE NETWORK
 // ============================================
 
-function SafetyCage({ position, width = 3, depth = 3, height = 2 }) {
-  const posts = [
-    [-width/2, 0, -depth/2], [width/2, 0, -depth/2],
-    [-width/2, 0, depth/2], [width/2, 0, depth/2],
-  ];
+function GasPipeNetwork({ machines, valvesClosed, onValveClose }) {
+  // Check if any machine has gas leak (simulated by high temperature or vibration)
+  const hasGasLeak = machines.some(m => m.temperature > 60 || m.vibration === 1);
   
   return (
-    <group position={position}>
-      {/* Posts */}
-      {posts.map((pos, i) => (
-        <mesh key={i} position={[pos[0], height/2, pos[2]]} castShadow>
-          <boxGeometry args={[0.06, height, 0.06]} />
-          <meshStandardMaterial color="#a3a3a3" roughness={0.5} metalness={0.5} />
-        </mesh>
-      ))}
+    <group>
+      {/* Main gas line */}
+      <GasPipe 
+        start={[-20, 3, -5]} 
+        end={[20, 3, -5]} 
+        radius={0.1}
+        hasLeak={hasGasLeak}
+        valveClosed={valvesClosed['gas-main']}
+        onValveClose={() => onValveClose('gas-main')}
+      />
       
-      {/* Top rail - yellow safety color */}
-      {[
-        { pos: [0, height, -depth/2], size: [width, 0.04, 0.04] },
-        { pos: [0, height, depth/2], size: [width, 0.04, 0.04] },
-        { pos: [-width/2, height, 0], size: [0.04, 0.04, depth] },
-        { pos: [width/2, height, 0], size: [0.04, 0.04, depth] },
-      ].map((rail, i) => (
-        <mesh key={i} position={rail.pos}>
-          <boxGeometry args={rail.size} />
-          <meshStandardMaterial color="#fbbf24" roughness={0.3} metalness={0.6} />
-        </mesh>
-      ))}
+      {/* Branch lines to machines */}
+      <GasPipe start={[-8, 3, -5]} end={[-8, 1.5, 2]} radius={0.06} />
+      <GasPipe start={[0, 3, -5]} end={[0, 1.5, 2]} radius={0.06} />
+      <GasPipe start={[8, 3, -5]} end={[8, 1.5, 2]} radius={0.06} />
       
-      {/* Mid rail */}
-      {[
-        { pos: [0, height * 0.5, -depth/2], size: [width, 0.03, 0.03] },
-        { pos: [0, height * 0.5, depth/2], size: [width, 0.03, 0.03] },
-        { pos: [-width/2, height * 0.5, 0], size: [0.03, 0.03, depth] },
-        { pos: [width/2, height * 0.5, 0], size: [0.03, 0.03, depth] },
-      ].map((rail, i) => (
-        <mesh key={`mid-${i}`} position={rail.pos}>
-          <boxGeometry args={rail.size} />
-          <meshStandardMaterial color="#fbbf24" roughness={0.3} metalness={0.6} />
-        </mesh>
-      ))}
-      
-      {/* Mesh panels */}
-      {[
-        { pos: [0, height/2, -depth/2], size: [width-0.1, height-0.1, 0.01] },
-        { pos: [0, height/2, depth/2], size: [width-0.1, height-0.1, 0.01] },
-        { pos: [-width/2, height/2, 0], size: [0.01, height-0.1, depth-0.1] },
-        { pos: [width/2, height/2, 0], size: [0.01, height-0.1, depth-0.1] },
-      ].map((panel, i) => (
-        <mesh key={`mesh-${i}`} position={panel.pos}>
-          <boxGeometry args={panel.size} />
-          <meshStandardMaterial color="#525252" transparent opacity={0.15} wireframe />
+      {/* Pipe supports */}
+      {[-15, -8, 0, 8, 15].map((x, i) => (
+        <mesh key={i} position={[x, 1.5, -5]}>
+          <boxGeometry args={[0.1, 3, 0.1]} />
+          <meshStandardMaterial color="#64748b" roughness={0.6} metalness={0.4} />
         </mesh>
       ))}
     </group>
@@ -938,90 +435,306 @@ function SafetyCage({ position, width = 3, depth = 3, height = 2 }) {
 }
 
 // ============================================
-// CONTROL PANEL / HMI STATION
+// PUMP MOTOR WITH REALISTIC ANIMATION
 // ============================================
 
-function ControlPanel({ position, rotation = [0, 0, 0] }) {
-  const screenRef = useRef();
+function PumpMotor({ position, machine, isShutdown, onShutdown }) {
+  const pumpRef = useRef();
+  const fanRef = useRef();
+  const impellerRef = useRef();
+  const [hovered, setHovered] = useState(false);
+  
+  const isOverheating = machine.temperature > 55;
+  const isCritical = machine.temperature > 70;
+  const needsMaintenance = isOverheating || machine.vibration === 1;
+  
+  const motorColor = useMemo(() => {
+    if (isShutdown) return '#4b5563';
+    if (isCritical) return '#ef4444';
+    if (isOverheating) return '#f97316';
+    return '#3b82f6';
+  }, [isShutdown, isCritical, isOverheating]);
   
   useFrame((state) => {
-    if (screenRef.current) {
-      const t = state.clock.getElapsedTime();
-      screenRef.current.material.emissiveIntensity = 0.3 + Math.sin(t * 2) * 0.1;
+    const t = state.clock.getElapsedTime();
+    
+    if (!isShutdown) {
+      // Rotate impeller based on temperature
+      if (impellerRef.current) {
+        const speed = Math.min(machine.temperature / 30, 3);
+        impellerRef.current.rotation.y += 0.1 * speed;
+      }
+      
+      // Fan rotation - faster when overheating
+      if (fanRef.current) {
+        const fanSpeed = isOverheating ? 0.3 : 0.1;
+        fanRef.current.rotation.z += fanSpeed;
+      }
+      
+      // Vibration effect
+      if (pumpRef.current && machine.vibration === 1) {
+        pumpRef.current.position.x = position[0] + Math.sin(t * 40) * 0.01;
+        pumpRef.current.position.z = position[2] + Math.cos(t * 35) * 0.008;
+      }
     }
   });
 
   return (
-    <group position={position} rotation={rotation}>
-      {/* Main cabinet */}
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <boxGeometry args={[1, 1.8, 0.45]} />
-        <meshStandardMaterial color="#404040" roughness={0.7} metalness={0.3} />
+    <group 
+      ref={pumpRef} 
+      position={position}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    >
+      {/* Base Platform */}
+      <mesh position={[0, 0.05, 0]} castShadow>
+        <boxGeometry args={[2, 0.1, 1.5]} />
+        <meshStandardMaterial color="#374151" roughness={0.8} metalness={0.3} />
       </mesh>
       
-      {/* Screen */}
-      <mesh ref={screenRef} position={[0, 1.3, 0.24]}>
-        <boxGeometry args={[0.7, 0.5, 0.02]} />
-        <meshStandardMaterial color="#0f172a" emissive="#1e40af" emissiveIntensity={0.3} roughness={0.2} />
+      {/* Motor Body */}
+      <mesh position={[-0.4, 0.4, 0]} castShadow>
+        <cylinderGeometry args={[0.3, 0.35, 0.6, 32]} />
+        <meshStandardMaterial 
+          color={motorColor} 
+          roughness={0.4} 
+          metalness={0.6}
+          emissive={isCritical ? '#ef4444' : '#000'}
+          emissiveIntensity={isCritical ? 0.5 : 0}
+        />
       </mesh>
       
-      {/* Screen bezel */}
-      <mesh position={[0, 1.3, 0.23]}>
-        <boxGeometry args={[0.75, 0.55, 0.01]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.5} />
+      {/* Cooling Fan Housing */}
+      <mesh position={[-0.8, 0.4, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.25, 0.25, 0.15, 24]} />
+        <meshStandardMaterial 
+          color={isOverheating ? '#ef4444' : '#6b7280'}
+          roughness={0.5} 
+          metalness={0.5}
+          emissive={isOverheating ? '#ef4444' : '#000'}
+          emissiveIntensity={isOverheating ? 0.3 : 0}
+        />
       </mesh>
       
-      {/* Indicator lights */}
-      {[
-        { x: -0.25, color: '#22c55e' },
-        { x: -0.1, color: '#22c55e' },
-        { x: 0.05, color: '#eab308' },
-        { x: 0.2, color: '#ef4444' },
-      ].map((light, i) => (
-        <mesh key={i} position={[light.x, 0.9, 0.24]}>
-          <circleGeometry args={[0.03, 16]} />
-          <meshBasicMaterial color={light.color} />
-        </mesh>
-      ))}
+      {/* Cooling Fan Blades */}
+      <group ref={fanRef} position={[-0.85, 0.4, 0]} rotation={[0, 0, Math.PI / 2]}>
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <mesh key={i} rotation={[0, (i * Math.PI) / 3, 0]} position={[0, 0, 0]}>
+            <boxGeometry args={[0.02, 0.18, 0.08]} />
+            <meshStandardMaterial 
+              color={isOverheating ? '#fca5a5' : '#9ca3af'}
+              emissive={isOverheating ? '#ef4444' : '#000'}
+              emissiveIntensity={isOverheating ? 0.5 : 0}
+            />
+          </mesh>
+        ))}
+      </group>
       
-      {/* Button panel */}
-      <mesh position={[0, 0.55, 0.24]}>
-        <boxGeometry args={[0.5, 0.25, 0.02]} />
-        <meshStandardMaterial color="#374151" roughness={0.6} />
+      {/* Pump Head */}
+      <mesh position={[0.3, 0.35, 0]} castShadow>
+        <boxGeometry args={[0.5, 0.5, 0.6]} />
+        <meshStandardMaterial color="#475569" roughness={0.5} metalness={0.5} />
       </mesh>
       
-      {/* Buttons */}
-      {[
-        { pos: [-0.15, 0.55, 0.26], color: '#22c55e' },
-        { pos: [0, 0.55, 0.26], color: '#3b82f6' },
-        { pos: [0.15, 0.55, 0.26], color: '#ef4444' },
-      ].map((btn, i) => (
-        <mesh key={i} position={btn.pos} rotation={[Math.PI/2, 0, 0]}>
-          <cylinderGeometry args={[0.03, 0.03, 0.02, 12]} />
-          <meshStandardMaterial color={btn.color} roughness={0.3} metalness={0.5} />
-        </mesh>
-      ))}
-      
-      {/* Emergency stop */}
-      <mesh position={[0.35, 0.35, 0.24]} rotation={[Math.PI/2, 0, 0]}>
-        <cylinderGeometry args={[0.06, 0.06, 0.03, 16]} />
-        <meshStandardMaterial color="#dc2626" roughness={0.4} metalness={0.5} />
+      {/* Impeller Housing */}
+      <mesh position={[0.6, 0.35, 0]} castShadow>
+        <cylinderGeometry args={[0.25, 0.25, 0.3, 24]} />
+        <meshStandardMaterial color="#0ea5e9" roughness={0.3} metalness={0.7} transparent opacity={0.8} />
       </mesh>
       
-      {/* Keyboard shelf */}
-      <mesh position={[0, 0.15, 0.35]} castShadow>
-        <boxGeometry args={[0.6, 0.03, 0.25]} />
-        <meshStandardMaterial color="#525252" roughness={0.6} metalness={0.3} />
+      {/* Rotating Impeller */}
+      <group ref={impellerRef} position={[0.6, 0.35, 0]}>
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <mesh key={i} rotation={[0, (i * Math.PI) / 3, 0]}>
+            <boxGeometry args={[0.15, 0.02, 0.04]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.8} roughness={0.2} />
+          </mesh>
+        ))}
+      </group>
+      
+      {/* Inlet Pipe */}
+      <mesh position={[0.6, 0.35, -0.35]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 0.3, 12]} />
+        <meshStandardMaterial color="#6b7280" roughness={0.4} metalness={0.6} />
       </mesh>
+      
+      {/* Outlet Pipe */}
+      <mesh position={[0.6, 0.6, 0]} rotation={[0, 0, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 0.3, 12]} />
+        <meshStandardMaterial color="#6b7280" roughness={0.4} metalness={0.6} />
+      </mesh>
+      
+      {/* Pressure Gauge */}
+      <mesh position={[0.4, 0.7, 0.2]}>
+        <cylinderGeometry args={[0.06, 0.06, 0.02, 16]} />
+        <meshStandardMaterial color="#f1f5f9" roughness={0.3} metalness={0.4} />
+      </mesh>
+      
+      {/* Critical Alert Light */}
+      {(isCritical || isOverheating) && !isShutdown && (
+        <pointLight position={[0, 1, 0]} color="#ef4444" intensity={2} distance={3} />
+      )}
+      
+      {/* Status Label */}
+      {hovered && (
+        <Html position={[0, 1.2, 0]} center>
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.95)',
+            border: `2px solid ${isShutdown ? '#6b7280' : motorColor}`,
+            borderRadius: 12,
+            padding: '12px 16px',
+            color: '#f1f5f9',
+            fontSize: 12,
+            minWidth: 180,
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          }}>
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: motorColor }}>
+              🔧 Pump Motor
+            </div>
+            <div style={{ display: 'grid', gap: 4 }}>
+              <div>🌡️ Temp: <span style={{ color: isCritical ? '#ef4444' : isOverheating ? '#f97316' : '#22c55e' }}>{machine.temperature}°C</span></div>
+              <div>📊 Health: <span style={{ color: machine.healthScore < 50 ? '#ef4444' : '#22c55e' }}>{machine.healthScore}%</span></div>
+              <div>📳 Vibration: <span style={{ color: machine.vibration === 1 ? '#ef4444' : '#22c55e' }}>{machine.vibration === 1 ? 'ALERT' : 'Normal'}</span></div>
+              <div>⚡ Status: <span style={{ color: isShutdown ? '#6b7280' : '#22c55e' }}>{isShutdown ? 'SHUTDOWN' : 'Running'}</span></div>
+            </div>
+          </div>
+        </Html>
+      )}
+      
+      {/* Maintenance/Shutdown Button */}
+      {needsMaintenance && !isShutdown && (
+        <Html position={[0, 1.5, 0]} center>
+          <div style={{
+            background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: 8,
+            fontSize: 12,
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            animation: 'pulse 1s infinite',
+            boxShadow: '0 4px 20px rgba(239, 68, 68, 0.5)',
+            textAlign: 'center'
+          }} onClick={onShutdown}>
+            ⚠️ MAINTENANCE REQUIRED
+            <div style={{ fontSize: 10, marginTop: 4 }}>Click to shutdown motor</div>
+          </div>
+        </Html>
+      )}
+      
+      {isShutdown && (
+        <Html position={[0, 1, 0]} center>
+          <div style={{
+            background: 'rgba(107, 114, 128, 0.95)',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: 8,
+            fontSize: 12,
+            fontWeight: 'bold'
+          }}>
+            🔧 MOTOR SHUTDOWN FOR MAINTENANCE
+          </div>
+        </Html>
+      )}
     </group>
   );
 }
 
 // ============================================
-// INDUSTRIAL MACHINE GEOMETRIES
+// INDUSTRIAL FAN WITH TEMPERATURE RESPONSE
 // ============================================
 
-function MotorGeometry({ color, emissiveIntensity }) {
+function IndustrialFan({ position, temperature, isShutdown }) {
+  const fanRef = useRef();
+  const housingRef = useRef();
+  
+  const isOverheating = temperature > 55;
+  const isCritical = temperature > 70;
+  
+  useFrame((state) => {
+    if (!isShutdown && fanRef.current) {
+      // Fan speed increases with temperature
+      const speed = Math.min(temperature / 20, 5) * 0.1;
+      fanRef.current.rotation.z += speed;
+    }
+    
+    // Pulsing effect when critical
+    if (housingRef.current && isCritical && !isShutdown) {
+      const t = state.clock.getElapsedTime();
+      housingRef.current.material.emissiveIntensity = 0.3 + Math.sin(t * 5) * 0.2;
+    }
+  });
+  
+  const fanColor = useMemo(() => {
+    if (isShutdown) return '#4b5563';
+    if (isCritical) return '#ef4444';
+    if (isOverheating) return '#f97316';
+    return '#3b82f6';
+  }, [isShutdown, isCritical, isOverheating]);
+
+  return (
+    <group position={position}>
+      {/* Fan Housing */}
+      <mesh ref={housingRef} castShadow>
+        <boxGeometry args={[0.8, 0.8, 0.3]} />
+        <meshStandardMaterial 
+          color={fanColor}
+          roughness={0.5}
+          metalness={0.5}
+          emissive={isCritical ? '#ef4444' : '#000'}
+          emissiveIntensity={isCritical ? 0.3 : 0}
+        />
+      </mesh>
+      
+      {/* Fan Guard */}
+      <mesh position={[0, 0, 0.16]}>
+        <ringGeometry args={[0.1, 0.35, 32]} />
+        <meshStandardMaterial color="#9ca3af" roughness={0.4} metalness={0.6} wireframe />
+      </mesh>
+      
+      {/* Rotating Fan Blades */}
+      <group ref={fanRef} position={[0, 0, 0.1]}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <mesh key={i} rotation={[0, 0, (i * Math.PI * 2) / 5]}>
+            <boxGeometry args={[0.28, 0.08, 0.02]} />
+            <meshStandardMaterial 
+              color={isOverheating ? '#fca5a5' : '#e5e7eb'}
+              emissive={isOverheating && !isShutdown ? '#ef4444' : '#000'}
+              emissiveIntensity={isOverheating ? 0.4 : 0}
+            />
+          </mesh>
+        ))}
+      </group>
+      
+      {/* Status Light */}
+      <mesh position={[0.3, 0.3, 0.16]}>
+        <sphereGeometry args={[0.03, 12, 12]} />
+        <meshBasicMaterial color={isShutdown ? '#6b7280' : isCritical ? '#ef4444' : '#22c55e'} />
+      </mesh>
+      
+      {isCritical && !isShutdown && (
+        <pointLight position={[0, 0, 0.5]} color="#ef4444" intensity={1.5} distance={2} />
+      )}
+    </group>
+  );
+}
+
+// ============================================
+// MACHINE GEOMETRIES
+// ============================================
+
+function MotorGeometry({ color, emissiveIntensity, temperature, isShutdown }) {
+  const fanRef = useRef();
+  const isOverheating = temperature > 55;
+  
+  useFrame(() => {
+    if (fanRef.current && !isShutdown) {
+      const speed = Math.min(temperature / 25, 4) * 0.1;
+      fanRef.current.rotation.z += speed;
+    }
+  });
+  
   return (
     <group>
       {/* Motor housing */}
@@ -1036,11 +749,29 @@ function MotorGeometry({ color, emissiveIntensity }) {
         />
       </mesh>
       
-      {/* Shaft */}
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.12, 0.2, 16]} />
-        <meshStandardMaterial color="#d4d4d4" roughness={0.2} metalness={0.9} />
-      </mesh>
+      {/* Cooling Fan */}
+      <group position={[0, 0.9, 0]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.25, 0.25, 0.1, 24]} />
+          <meshStandardMaterial 
+            color={isOverheating ? '#ef4444' : '#6b7280'}
+            emissive={isOverheating ? '#ef4444' : '#000'}
+            emissiveIntensity={isOverheating ? 0.4 : 0}
+          />
+        </mesh>
+        <group ref={fanRef} position={[0, 0.06, 0]}>
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <mesh key={i} rotation={[0, (i * Math.PI) / 3, 0]}>
+              <boxGeometry args={[0.18, 0.02, 0.04]} />
+              <meshStandardMaterial 
+                color={isOverheating ? '#fca5a5' : '#9ca3af'}
+                emissive={isOverheating ? '#ef4444' : '#000'}
+                emissiveIntensity={isOverheating ? 0.3 : 0}
+              />
+            </mesh>
+          ))}
+        </group>
+      </group>
       
       {/* Cooling fins */}
       {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -1050,25 +781,16 @@ function MotorGeometry({ color, emissiveIntensity }) {
         </mesh>
       ))}
       
-      {/* Junction box */}
-      <mesh position={[0.35, 0.65, 0]} castShadow>
-        <boxGeometry args={[0.15, 0.2, 0.12]} />
-        <meshStandardMaterial color="#404040" roughness={0.6} metalness={0.4} />
-      </mesh>
-      
       {/* Base mount */}
       <mesh position={[0, 0.1, 0]} castShadow>
         <boxGeometry args={[0.65, 0.2, 0.65]} />
         <meshStandardMaterial color="#525252" roughness={0.7} metalness={0.3} />
       </mesh>
       
-      {/* Mounting bolts */}
-      {[[-0.25, -0.25], [0.25, -0.25], [-0.25, 0.25], [0.25, 0.25]].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0.02, z]}>
-          <cylinderGeometry args={[0.03, 0.03, 0.04, 8]} />
-          <meshStandardMaterial color="#71717a" roughness={0.4} metalness={0.7} />
-        </mesh>
-      ))}
+      {/* Temperature indicator */}
+      {isOverheating && (
+        <IndustrialFan position={[0.5, 0.5, 0]} temperature={temperature} isShutdown={isShutdown} />
+      )}
     </group>
   );
 }
@@ -1076,7 +798,6 @@ function MotorGeometry({ color, emissiveIntensity }) {
 function PumpGeometry({ color, emissiveIntensity }) {
   return (
     <group>
-      {/* Pump casing */}
       <mesh position={[0, 0.4, 0]} castShadow>
         <boxGeometry args={[0.6, 0.55, 0.45]} />
         <meshStandardMaterial
@@ -1088,7 +809,6 @@ function PumpGeometry({ color, emissiveIntensity }) {
         />
       </mesh>
       
-      {/* Volute/impeller housing */}
       <mesh position={[0, 0.75, 0]} castShadow>
         <cylinderGeometry args={[0.22, 0.28, 0.22, 24]} />
         <meshStandardMaterial
@@ -1100,33 +820,16 @@ function PumpGeometry({ color, emissiveIntensity }) {
         />
       </mesh>
       
-      {/* Inlet flange */}
       <mesh position={[-0.4, 0.4, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[0.1, 0.1, 0.2, 16]} />
         <meshStandardMaterial color="#a1a1aa" roughness={0.4} metalness={0.7} />
       </mesh>
-      <mesh position={[-0.52, 0.4, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.14, 0.14, 0.03, 16]} />
-        <meshStandardMaterial color="#78716c" roughness={0.5} metalness={0.6} />
-      </mesh>
       
-      {/* Outlet flange */}
       <mesh position={[0.4, 0.4, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[0.1, 0.1, 0.2, 16]} />
         <meshStandardMaterial color="#a1a1aa" roughness={0.4} metalness={0.7} />
       </mesh>
-      <mesh position={[0.52, 0.4, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.14, 0.14, 0.03, 16]} />
-        <meshStandardMaterial color="#78716c" roughness={0.5} metalness={0.6} />
-      </mesh>
       
-      {/* Pressure gauge */}
-      <mesh position={[0.15, 0.92, 0]}>
-        <cylinderGeometry args={[0.05, 0.05, 0.02, 16]} />
-        <meshStandardMaterial color="#e5e5e5" roughness={0.3} metalness={0.4} />
-      </mesh>
-      
-      {/* Base plate */}
       <mesh position={[0, 0.06, 0]} castShadow>
         <boxGeometry args={[0.75, 0.12, 0.55]} />
         <meshStandardMaterial color="#525252" roughness={0.7} metalness={0.3} />
@@ -1138,7 +841,6 @@ function PumpGeometry({ color, emissiveIntensity }) {
 function CompressorGeometry({ color, emissiveIntensity }) {
   return (
     <group>
-      {/* Tank body */}
       <mesh position={[0, 0.55, 0]} castShadow>
         <capsuleGeometry args={[0.32, 0.5, 8, 24]} />
         <meshStandardMaterial
@@ -1150,39 +852,100 @@ function CompressorGeometry({ color, emissiveIntensity }) {
         />
       </mesh>
       
-      {/* Motor unit */}
       <mesh position={[0.4, 0.45, 0]} castShadow>
         <cylinderGeometry args={[0.15, 0.15, 0.35, 16]} />
         <meshStandardMaterial color="#404040" roughness={0.5} metalness={0.5} />
       </mesh>
       
-      {/* Control box */}
-      <mesh position={[0.38, 0.75, 0]} castShadow>
-        <boxGeometry args={[0.18, 0.3, 0.22]} />
-        <meshStandardMaterial color="#525252" roughness={0.5} metalness={0.4} />
-      </mesh>
-      
-      {/* Pressure gauge */}
-      <mesh position={[0, 0.95, 0.2]} rotation={[Math.PI/2, 0, 0]}>
-        <cylinderGeometry args={[0.06, 0.06, 0.025, 16]} />
-        <meshStandardMaterial color="#e5e5e5" roughness={0.3} metalness={0.5} />
-      </mesh>
-      
-      {/* Relief valve */}
       <mesh position={[0, 1, 0]} castShadow>
         <cylinderGeometry args={[0.04, 0.06, 0.1, 12]} />
         <meshStandardMaterial color="#dc2626" roughness={0.5} metalness={0.5} />
       </mesh>
       
-      {/* Outlet fitting */}
-      <mesh position={[-0.35, 0.55, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.06, 0.06, 0.15, 12]} />
-        <meshStandardMaterial color="#a1a1aa" roughness={0.4} metalness={0.7} />
-      </mesh>
-      
-      {/* Base */}
       <mesh position={[0, 0.08, 0]} castShadow>
         <cylinderGeometry args={[0.38, 0.42, 0.16, 24]} />
+        <meshStandardMaterial color="#525252" roughness={0.7} metalness={0.3} />
+      </mesh>
+    </group>
+  );
+}
+
+// ============================================
+// GAS DETECTOR GEOMETRY
+// ============================================
+
+function GasDetectorGeometry({ color, emissiveIntensity, gasLevel = 100, isShutdown }) {
+  const sensorRef = useRef();
+  const alertRef = useRef();
+  
+  const hasGasLeak = gasLevel > 300;
+  const isCriticalLeak = gasLevel > 500;
+  
+  useFrame((state) => {
+    if (!sensorRef.current || isShutdown) return;
+    const t = state.clock.getElapsedTime();
+    
+    // Pulsing sensor when gas detected
+    if (hasGasLeak && alertRef.current) {
+      alertRef.current.material.emissiveIntensity = 0.5 + Math.sin(t * 8) * 0.5;
+    }
+  });
+
+  return (
+    <group ref={sensorRef}>
+      {/* Main housing */}
+      <mesh position={[0, 0.4, 0]} castShadow>
+        <boxGeometry args={[0.5, 0.6, 0.35]} />
+        <meshStandardMaterial
+          color={color}
+          roughness={0.4}
+          metalness={0.6}
+          emissive={emissiveIntensity > 0 ? '#ef4444' : '#000'}
+          emissiveIntensity={emissiveIntensity}
+        />
+      </mesh>
+      
+      {/* Sensor dome */}
+      <mesh position={[0, 0.75, 0]} castShadow>
+        <sphereGeometry args={[0.15, 16, 16]} />
+        <meshStandardMaterial 
+          color={hasGasLeak ? '#ef4444' : '#22c55e'} 
+          roughness={0.3} 
+          metalness={0.7}
+          emissive={hasGasLeak ? '#ef4444' : '#000'}
+          emissiveIntensity={hasGasLeak ? 0.5 : 0}
+        />
+      </mesh>
+      
+      {/* Alert light on top */}
+      <mesh ref={alertRef} position={[0, 0.95, 0]} castShadow>
+        <cylinderGeometry args={[0.05, 0.08, 0.1, 8]} />
+        <meshStandardMaterial 
+          color={isCriticalLeak ? '#dc2626' : hasGasLeak ? '#f97316' : '#22c55e'}
+          emissive={isCriticalLeak ? '#dc2626' : hasGasLeak ? '#f97316' : '#22c55e'}
+          emissiveIntensity={hasGasLeak ? 0.8 : 0.2}
+        />
+      </mesh>
+      
+      {/* Display panel */}
+      <mesh position={[0, 0.5, 0.19]} castShadow>
+        <boxGeometry args={[0.3, 0.2, 0.02]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.9} metalness={0.1} />
+      </mesh>
+      
+      {/* Gas inlet pipes */}
+      <mesh position={[-0.35, 0.35, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 0.2, 12]} />
+        <meshStandardMaterial color="#404040" roughness={0.6} metalness={0.5} />
+      </mesh>
+      <mesh position={[0.35, 0.35, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 0.2, 12]} />
+        <meshStandardMaterial color="#404040" roughness={0.6} metalness={0.5} />
+      </mesh>
+      
+      {/* Base plate */}
+      <mesh position={[0, 0.05, 0]} castShadow>
+        <boxGeometry args={[0.6, 0.1, 0.45]} />
         <meshStandardMaterial color="#525252" roughness={0.7} metalness={0.3} />
       </mesh>
     </group>
@@ -1205,55 +968,164 @@ function MachinePlatform({ position, statusColor, isCritical }) {
 
   return (
     <group position={[position[0], 0.01, position[2]]}>
-      {/* Concrete pad */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <boxGeometry args={[1.5, 1.5, 0.08]} />
         <meshStandardMaterial color="#64748b" roughness={0.9} metalness={0.1} />
       </mesh>
       
-      {/* Status ring */}
       <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
         <ringGeometry args={[0.65, 0.72, 48]} />
         <meshBasicMaterial color={statusColor} transparent opacity={isCritical ? 0.6 : 0.3} />
-      </mesh>
-      
-      {/* Inner platform */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
-        <circleGeometry args={[0.62, 32]} />
-        <meshStandardMaterial color="#1e293b" roughness={0.7} metalness={0.3} />
       </mesh>
     </group>
   );
 }
 
 // ============================================
-// MACHINE COMPONENT (Connected to API)
+// ATTENTION PARTICLES - Floating particles for machines needing attention
 // ============================================
 
-function Machine({ machine, config, onSelect }) {
-  const groupRef = useRef();
-  const alertLightRef = useRef();
-  const [hovered, setHovered] = useState(false);
+function AttentionParticles({ position, color = '#f59e0b' }) {
+  const particlesRef = useRef();
+  const count = 20;
   
-  const isCritical = machine.failureRisk >= 70;
-  const hasVibration = machine.vibration === 1;
-  
-  const statusColor = useMemo(() => getStatusColor(machine.failureRisk), [machine.failureRisk]);
-  const machineColor = useMemo(() => getMachineColor(machine.failureRisk), [machine.failureRisk]);
-  
-  const emissiveIntensity = isCritical ? 0.4 : 0;
+  const particles = useMemo(() => {
+    const temp = [];
+    for (let i = 0; i < count; i++) {
+      temp.push({
+        position: [
+          (Math.random() - 0.5) * 2,
+          Math.random() * 2,
+          (Math.random() - 0.5) * 2
+        ],
+        speed: 0.5 + Math.random() * 1,
+        offset: Math.random() * Math.PI * 2
+      });
+    }
+    return temp;
+  }, []);
 
   useFrame((state) => {
-    if (!groupRef.current) return;
+    if (!particlesRef.current) return;
     const t = state.clock.getElapsedTime();
     
-    if (hasVibration) {
-      groupRef.current.position.x = config.position[0] + Math.sin(t * 30) * 0.006;
-      groupRef.current.position.z = config.position[2] + Math.cos(t * 35) * 0.004;
+    particlesRef.current.children.forEach((particle, i) => {
+      const p = particles[i];
+      particle.position.y = (t * p.speed + p.offset) % 3;
+      particle.position.x = p.position[0] + Math.sin(t * 2 + p.offset) * 0.2;
+      particle.position.z = p.position[2] + Math.cos(t * 2 + p.offset) * 0.2;
+      particle.material.opacity = 0.3 + Math.sin(t * 4 + p.offset) * 0.3;
+    });
+  });
+
+  return (
+    <group ref={particlesRef} position={position}>
+      {particles.map((p, i) => (
+        <mesh key={i} position={p.position}>
+          <sphereGeometry args={[0.03, 8, 8]} />
+          <meshBasicMaterial color={color} transparent opacity={0.5} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ============================================
+// ATTENTION RING - Pulsing ring around machines needing attention
+// ============================================
+
+function AttentionRing({ position, color = '#f59e0b' }) {
+  const ringRef = useRef();
+  const ring2Ref = useRef();
+  
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+    
+    if (ringRef.current) {
+      ringRef.current.scale.setScalar(1 + Math.sin(t * 3) * 0.15);
+      ringRef.current.material.opacity = 0.4 + Math.sin(t * 3) * 0.2;
+      ringRef.current.rotation.z = t * 0.5;
     }
     
-    if (alertLightRef.current && isCritical) {
-      alertLightRef.current.intensity = 1.2 + Math.sin(t * 8) * 0.6;
+    if (ring2Ref.current) {
+      ring2Ref.current.scale.setScalar(1.2 + Math.sin(t * 2 + 1) * 0.1);
+      ring2Ref.current.material.opacity = 0.2 + Math.sin(t * 2 + 1) * 0.15;
+      ring2Ref.current.rotation.z = -t * 0.3;
+    }
+  });
+
+  return (
+    <group position={[position[0], 0.02, position[2]]}>
+      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.9, 1.0, 32]} />
+        <meshBasicMaterial color={color} transparent opacity={0.5} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh ref={ring2Ref} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.1, 1.2, 32]} />
+        <meshBasicMaterial color={color} transparent opacity={0.3} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+}
+
+// ============================================
+// MACHINE COMPONENT
+// ============================================
+
+function Machine({ machine, config, onSelect, isShutdown, onShutdown, needsAttention = false }) {
+  const groupRef = useRef();
+  const alertLightRef = useRef();
+  const glowRef = useRef();
+  const [hovered, setHovered] = useState(false);
+  
+  // Check conditions based on sensor type
+  const isGasSensor = config.sensorType === 'GAS';
+  const hasGasLeak = isGasSensor && machine.gasLevel > 300;
+  const isCriticalLeak = isGasSensor && machine.gasLevel > 500;
+  
+  const isCritical = machine.failureRisk >= 70 || machine.status === 'Critical';
+  const isWarning = machine.failureRisk >= 50 || machine.status === 'Warning';
+  const hasVibration = machine.vibration === 1;
+  const needsMaintenance = isCritical || hasGasLeak;
+  
+  const statusColor = useMemo(() => getStatusColor(machine.failureRisk), [machine.failureRisk]);
+  const attentionColor = isCritical ? '#ef4444' : isWarning ? '#f97316' : '#f59e0b';
+  
+  const machineColor = useMemo(() => {
+    if (isShutdown) return '#4b5563';
+    if (isCritical || isCriticalLeak) return '#ef4444';
+    if (isWarning || hasGasLeak) return '#f97316';
+    if (needsAttention) return '#f59e0b';
+    return getMachineColor(machine.failureRisk);
+  }, [machine.failureRisk, isShutdown, isCritical, isWarning, hasGasLeak, isCriticalLeak, needsAttention]);
+  
+  const emissiveIntensity = (isCritical || isCriticalLeak || needsAttention) && !isShutdown ? 0.4 : 0;
+
+  useFrame((state) => {
+    if (!groupRef.current || isShutdown) return;
+    const t = state.clock.getElapsedTime();
+    
+    // Vibration effect
+    if (hasVibration || needsAttention) {
+      const vibIntensity = hasVibration ? 0.006 : 0.003;
+      const vibSpeed = hasVibration ? 30 : 15;
+      groupRef.current.position.x = config.position[0] + Math.sin(t * vibSpeed) * vibIntensity;
+      groupRef.current.position.z = config.position[2] + Math.cos(t * vibSpeed * 1.2) * vibIntensity;
+    }
+    
+    // Bobbing effect for attention
+    if (needsAttention && !hasVibration) {
+      groupRef.current.position.y = Math.sin(t * 2) * 0.02;
+    }
+    
+    if (alertLightRef.current && (isCritical || isCriticalLeak || needsAttention)) {
+      alertLightRef.current.intensity = 1.2 + Math.sin(t * (needsAttention ? 4 : 8)) * 0.6;
+    }
+    
+    // Glow pulsing for attention
+    if (glowRef.current && needsAttention) {
+      glowRef.current.scale.setScalar(1 + Math.sin(t * 3) * 0.1);
+      glowRef.current.material.opacity = 0.15 + Math.sin(t * 3) * 0.1;
     }
   });
 
@@ -1261,11 +1133,37 @@ function Machine({ machine, config, onSelect }) {
     motor: MotorGeometry,
     pump: PumpGeometry,
     compressor: CompressorGeometry,
+    gasDetector: GasDetectorGeometry,
   }[config.type] || MotorGeometry;
 
   return (
     <group>
-      <MachinePlatform position={config.position} statusColor={statusColor} isCritical={isCritical} />
+      <MachinePlatform position={config.position} statusColor={needsAttention ? attentionColor : statusColor} isCritical={isCritical || needsAttention} />
+      
+      {/* Attention Effects */}
+      {needsAttention && !isShutdown && (
+        <>
+          <AttentionRing position={config.position} color={attentionColor} />
+          <AttentionParticles position={[config.position[0], 0.5, config.position[2]]} color={attentionColor} />
+          
+          {/* Glow sphere */}
+          <mesh ref={glowRef} position={[config.position[0], 0.8, config.position[2]]}>
+            <sphereGeometry args={[1.2, 16, 16]} />
+            <meshBasicMaterial color={attentionColor} transparent opacity={0.15} />
+          </mesh>
+          
+          {/* Spotlight from above */}
+          <spotLight
+            position={[config.position[0], 4, config.position[2]]}
+            target-position={config.position}
+            angle={0.4}
+            penumbra={0.5}
+            intensity={1.5}
+            color={attentionColor}
+            distance={8}
+          />
+        </>
+      )}
       
       <group
         ref={groupRef}
@@ -1274,37 +1172,125 @@ function Machine({ machine, config, onSelect }) {
         onPointerOut={() => setHovered(false)}
         onClick={() => onSelect(machine)}
       >
-        <GeometryComponent color={machineColor} emissiveIntensity={emissiveIntensity} />
+        <GeometryComponent 
+          color={machineColor} 
+          emissiveIntensity={emissiveIntensity}
+          temperature={machine.temperature}
+          gasLevel={machine.gasLevel || 0}
+          isShutdown={isShutdown}
+        />
         
-        {isCritical && (
-          <pointLight ref={alertLightRef} position={[0, 1.5, 0]} color="#ef4444" intensity={1.2} distance={3} />
+        {/* Alert light for critical or attention states */}
+        {(isCritical || isCriticalLeak || needsAttention) && !isShutdown && (
+          <pointLight 
+            ref={alertLightRef} 
+            position={[0, 1.5, 0]} 
+            color={attentionColor} 
+            intensity={1.2} 
+            distance={4} 
+          />
+        )}
+        
+        {/* Attention Badge floating above machine */}
+        {needsAttention && !isShutdown && (
+          <Html position={[0, 2.5, 0]} center>
+            <div style={{
+              background: `linear-gradient(135deg, ${attentionColor}, ${isCritical ? '#dc2626' : '#ea580c'})`,
+              color: 'white',
+              padding: '6px 14px',
+              borderRadius: 20,
+              fontSize: 11,
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: `0 4px 20px ${attentionColor}80`,
+              animation: 'bounce 1s infinite'
+            }}>
+              <span style={{ animation: 'spin 2s linear infinite' }}>⚠️</span>
+              NEEDS ATTENTION
+            </div>
+          </Html>
         )}
         
         {hovered && (
           <Html position={[0, 1.8, 0]} center distanceFactor={8}>
             <div style={{
               background: 'rgba(15, 23, 42, 0.95)',
-              border: `2px solid ${statusColor}`,
+              border: `2px solid ${needsAttention ? attentionColor : statusColor}`,
               borderRadius: '8px',
               padding: '12px 16px',
               color: '#f1f5f9',
               fontSize: '12px',
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-              minWidth: '150px',
+              minWidth: '180px',
               backdropFilter: 'blur(10px)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              boxShadow: `0 8px 32px rgba(0,0,0,0.5)${needsAttention ? `, 0 0 20px ${attentionColor}40` : ''}`,
             }}>
-              <div style={{ fontWeight: '700', fontSize: '13px', marginBottom: '8px', color: statusColor }}>
+              <div style={{ fontWeight: '700', fontSize: '13px', marginBottom: '8px', color: needsAttention ? attentionColor : statusColor }}>
                 {config.label} - {machine.name}
+                {needsAttention && <span style={{ marginLeft: 8, fontSize: 10 }}>⏱️ MONITORING</span>}
               </div>
               <div style={{ display: 'grid', gap: '5px' }}>
-                <div>🌡️ Temp: <span style={{ color: '#fbbf24', fontWeight: 600 }}>{machine.temperature}°C</span></div>
+                <div>📡 Sensor: <span style={{ fontWeight: 600, color: '#60a5fa' }}>{config.sensorType}</span></div>
+                <div>📊 Value: <span style={{ color: needsAttention ? attentionColor : statusColor, fontWeight: 600 }}>
+                  {machine.sensorValue !== undefined ? 
+                    (config.sensorType === 'TEMP' ? `${machine.sensorValue?.toFixed(1)}°C` :
+                     config.sensorType === 'HUM' ? `${machine.sensorValue?.toFixed(1)}%` :
+                     config.sensorType === 'GAS' ? `${machine.sensorValue?.toFixed(0)} ppm` :
+                     machine.sensorValue?.toFixed(2)) : 'N/A'}
+                </span></div>
                 <div>📊 Health: <span style={{ color: statusColor, fontWeight: 600 }}>{machine.healthScore}%</span></div>
                 <div>⚠️ Risk: <span style={{ color: statusColor, fontWeight: 600 }}>{machine.failureRisk}%</span></div>
-                <div>📳 Vibration: <span style={{ color: hasVibration ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
-                  {hasVibration ? 'ALERT' : 'Normal'}
+                {isGasSensor && (
+                  <div>🔥 Gas: <span style={{ color: isCriticalLeak ? '#ef4444' : hasGasLeak ? '#f97316' : '#22c55e', fontWeight: 600 }}>
+                    {isCriticalLeak ? 'CRITICAL LEAK!' : hasGasLeak ? 'LEAK DETECTED' : 'Normal'}
+                  </span></div>
+                )}
+                <div>📳 Alert: <span style={{ color: hasVibration ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
+                  {hasVibration ? 'TRIGGERED' : 'Normal'}
+                </span></div>
+                <div>⚡ Status: <span style={{ color: isShutdown ? '#6b7280' : isCritical ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
+                  {isShutdown ? 'SHUTDOWN' : machine.status}
                 </span></div>
               </div>
+            </div>
+          </Html>
+        )}
+        
+        {/* Maintenance Button */}
+        {needsMaintenance && !isShutdown && (
+          <Html position={[0, 2.2, 0]} center>
+            <div style={{
+              background: hasGasLeak ? 'linear-gradient(135deg, #f97316, #ea580c)' : 'linear-gradient(135deg, #dc2626, #991b1b)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: 8,
+              fontSize: 11,
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              animation: 'pulse 1s infinite',
+              boxShadow: hasGasLeak ? '0 4px 20px rgba(249, 115, 22, 0.5)' : '0 4px 20px rgba(239, 68, 68, 0.5)',
+              textAlign: 'center'
+            }} onClick={(e) => { e.stopPropagation(); onShutdown(); }}>
+              ⚠️ {isCriticalLeak ? 'GAS LEAK!' : hasGasLeak ? 'GAS ALERT' : isCritical ? 'CRITICAL!' : 'ALERT'}
+              <div style={{ fontSize: 9, marginTop: 2 }}>
+                {hasGasLeak ? 'Click to close valve' : 'Click to shutdown'}
+              </div>
+            </div>
+          </Html>
+        )}
+        
+        {isShutdown && (
+          <Html position={[0, 1.5, 0]} center>
+            <div style={{
+              background: 'rgba(107, 114, 128, 0.95)',
+              color: 'white',
+              padding: '6px 12px',
+              borderRadius: 8,
+              fontSize: 11,
+              fontWeight: 'bold'
+            }}>
+              🔧 MAINTENANCE MODE
             </div>
           </Html>
         )}
@@ -1314,155 +1300,26 @@ function Machine({ machine, config, onSelect }) {
 }
 
 // ============================================
-// ELECTRICAL CABINET
+// STORAGE TANK
 // ============================================
 
-function ElectricalCabinet({ position }) {
+function StorageTank({ position, height = 4, radius = 1, color = '#22c55e' }) {
   return (
     <group position={position}>
-      <mesh position={[0, 1, 0]} castShadow>
-        <boxGeometry args={[0.8, 2, 0.5]} />
-        <meshStandardMaterial color="#475569" roughness={0.6} metalness={0.4} />
+      <mesh position={[0, height / 2 + 0.3, 0]} castShadow>
+        <cylinderGeometry args={[radius, radius, height, 32]} />
+        <meshStandardMaterial color={color} roughness={0.35} metalness={0.7} />
       </mesh>
       
-      {/* Door handle */}
-      <mesh position={[0.3, 1, 0.26]}>
-        <boxGeometry args={[0.05, 0.15, 0.03]} />
-        <meshStandardMaterial color="#71717a" roughness={0.4} metalness={0.6} />
+      <mesh position={[0, height + 0.3, 0]} castShadow>
+        <sphereGeometry args={[radius, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color={color} roughness={0.35} metalness={0.7} />
       </mesh>
       
-      {/* Vents */}
-      {[1.6, 1.4, 0.6, 0.4].map((y, i) => (
-        <mesh key={i} position={[0, y, 0.26]}>
-          <boxGeometry args={[0.5, 0.08, 0.01]} />
-          <meshStandardMaterial color="#1f2937" roughness={0.8} />
-        </mesh>
-      ))}
-      
-      {/* Warning label */}
-      <mesh position={[0, 1.8, 0.26]}>
-        <planeGeometry args={[0.25, 0.15]} />
-        <meshBasicMaterial color="#eab308" />
+      <mesh position={[0, 0.15, 0]} castShadow>
+        <cylinderGeometry args={[radius + 0.15, radius + 0.2, 0.3, 32]} />
+        <meshStandardMaterial color="#52525b" roughness={0.7} metalness={0.3} />
       </mesh>
-    </group>
-  );
-}
-
-// ============================================
-// FORKLIFT
-// ============================================
-
-function Forklift({ position, rotation = [0, 0, 0] }) {
-  return (
-    <group position={position} rotation={rotation}>
-      {/* Body */}
-      <mesh position={[0, 0.5, 0]} castShadow>
-        <boxGeometry args={[1, 0.7, 1.8]} />
-        <meshStandardMaterial color="#eab308" roughness={0.4} metalness={0.5} />
-      </mesh>
-      
-      {/* Cabin frame */}
-      <mesh position={[0, 1.1, -0.2]} castShadow>
-        <boxGeometry args={[0.9, 0.8, 0.9]} />
-        <meshStandardMaterial color="#eab308" roughness={0.4} metalness={0.5} />
-      </mesh>
-      
-      {/* Roof */}
-      <mesh position={[0, 1.6, -0.2]}>
-        <boxGeometry args={[1, 0.08, 1]} />
-        <meshStandardMaterial color="#27272a" roughness={0.5} metalness={0.4} />
-      </mesh>
-      
-      {/* Mast */}
-      {[-0.3, 0, 0.3].map((x, i) => (
-        <mesh key={i} position={[x, 1.1, 0.95]} castShadow>
-          <boxGeometry args={[0.1, 2.2, 0.1]} />
-          <meshStandardMaterial color="#52525b" roughness={0.5} metalness={0.6} />
-        </mesh>
-      ))}
-      
-      {/* Forks */}
-      <mesh position={[0.2, 0.25, 1.5]} castShadow>
-        <boxGeometry args={[0.1, 0.06, 1]} />
-        <meshStandardMaterial color="#78716c" roughness={0.4} metalness={0.7} />
-      </mesh>
-      <mesh position={[-0.2, 0.25, 1.5]} castShadow>
-        <boxGeometry args={[0.1, 0.06, 1]} />
-        <meshStandardMaterial color="#78716c" roughness={0.4} metalness={0.7} />
-      </mesh>
-      
-      {/* Wheels */}
-      {[[0.4, 0.6], [-0.4, 0.6], [0.4, -0.6], [-0.4, -0.6]].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0.15, z]} rotation={[0, 0, Math.PI/2]} castShadow>
-          <cylinderGeometry args={[0.18, 0.18, 0.12, 16]} />
-          <meshStandardMaterial color="#1f2937" roughness={0.9} />
-        </mesh>
-      ))}
-      
-      {/* Warning beacon */}
-      <mesh position={[0, 1.7, -0.2]}>
-        <cylinderGeometry args={[0.06, 0.06, 0.08, 12]} />
-        <meshBasicMaterial color="#f97316" />
-      </mesh>
-    </group>
-  );
-}
-
-// ============================================
-// PALLET STACK
-// ============================================
-
-function PalletStack({ position, boxes = 3 }) {
-  return (
-    <group position={position}>
-      {/* Pallet */}
-      <mesh position={[0, 0.06, 0]}>
-        <boxGeometry args={[1.1, 0.12, 0.9]} />
-        <meshStandardMaterial color="#92400e" roughness={0.9} />
-      </mesh>
-      
-      {/* Boxes */}
-      {Array.from({ length: boxes }, (_, i) => (
-        <mesh key={i} position={[
-          (Math.random() - 0.5) * 0.3,
-          0.35 + i * 0.35,
-          (Math.random() - 0.5) * 0.2
-        ]} castShadow>
-          <boxGeometry args={[0.4 + Math.random() * 0.15, 0.3 + Math.random() * 0.1, 0.35 + Math.random() * 0.1]} />
-          <meshStandardMaterial color={['#854d0e', '#78350f', '#713f12'][i % 3]} roughness={0.85} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-// ============================================
-// TOOL BOARD
-// ============================================
-
-function ToolBoard({ position }) {
-  return (
-    <group position={position}>
-      {/* Board */}
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <boxGeometry args={[1.5, 1.2, 0.05]} />
-        <meshStandardMaterial color="#78716c" roughness={0.8} />
-      </mesh>
-      
-      {/* Tools (simplified) */}
-      {[
-        { x: -0.5, y: 1.4, w: 0.08, h: 0.4 },
-        { x: -0.3, y: 1.3, w: 0.06, h: 0.35 },
-        { x: -0.1, y: 1.35, w: 0.1, h: 0.25 },
-        { x: 0.15, y: 1.4, w: 0.05, h: 0.4 },
-        { x: 0.35, y: 1.25, w: 0.15, h: 0.15 },
-        { x: 0.55, y: 1.35, w: 0.08, h: 0.3 },
-      ].map((tool, i) => (
-        <mesh key={i} position={[tool.x, tool.y, 0.04]}>
-          <boxGeometry args={[tool.w, tool.h, 0.02]} />
-          <meshStandardMaterial color={i % 2 === 0 ? '#dc2626' : '#3b82f6'} roughness={0.5} metalness={0.5} />
-        </mesh>
-      ))}
     </group>
   );
 }
@@ -1488,25 +1345,17 @@ function IndustrialLighting() {
         shadow-camera-right={35}
         shadow-camera-top={35}
         shadow-camera-bottom={-35}
-        shadow-bias={-0.0001}
       />
       
       <directionalLight position={[-15, 15, -10]} intensity={0.5} color="#dbeafe" />
       
-      {/* Overhead industrial lights */}
       {[
-        [-12, 6, -6], [0, 6, -6], [12, 6, -6],
-        [-12, 6, 2], [0, 6, 2], [12, 6, 2],
-        [-12, 6, 8], [0, 6, 8], [12, 6, 8],
+        [-12, 6, 0], [0, 6, 0], [12, 6, 0],
       ].map((pos, i) => (
         <group key={i}>
           <mesh position={pos}>
             <boxGeometry args={[1.2, 0.12, 0.35]} />
             <meshStandardMaterial color="#404040" roughness={0.6} metalness={0.4} />
-          </mesh>
-          <mesh position={[pos[0], pos[1] - 0.08, pos[2]]}>
-            <boxGeometry args={[1, 0.04, 0.25]} />
-            <meshBasicMaterial color="#fef9c3" />
           </mesh>
           <pointLight position={pos} color="#fef3c7" intensity={0.4} distance={10} />
         </group>
@@ -1522,13 +1371,11 @@ function IndustrialLighting() {
 function Walls() {
   return (
     <group>
-      {/* Back wall */}
       <mesh position={[0, 3.5, -17]}>
         <boxGeometry args={[50, 7, 0.25]} />
         <meshStandardMaterial color="#334155" roughness={0.85} />
       </mesh>
       
-      {/* Side walls */}
       <mesh position={[-25, 3.5, 0]}>
         <boxGeometry args={[0.25, 7, 35]} />
         <meshStandardMaterial color="#334155" roughness={0.85} />
@@ -1536,26 +1383,6 @@ function Walls() {
       <mesh position={[25, 3.5, 0]}>
         <boxGeometry args={[0.25, 7, 35]} />
         <meshStandardMaterial color="#334155" roughness={0.85} />
-      </mesh>
-      
-      {/* Windows */}
-      {[-15, -5, 5, 15].map((x, i) => (
-        <mesh key={i} position={[x, 4.5, -16.8]}>
-          <boxGeometry args={[3.5, 2.5, 0.08]} />
-          <meshStandardMaterial color="#0c4a6e" roughness={0.1} metalness={0.2} transparent opacity={0.5} />
-        </mesh>
-      ))}
-      
-      {/* Roller door */}
-      <mesh position={[20, 2.5, -16.8]}>
-        <boxGeometry args={[5, 5, 0.15]} />
-        <meshStandardMaterial color="#52525b" roughness={0.6} metalness={0.4} />
-      </mesh>
-      
-      {/* Warning stripe at door */}
-      <mesh position={[20, 0.08, -16.5]}>
-        <boxGeometry args={[5.5, 0.15, 0.5]} />
-        <meshBasicMaterial color="#eab308" />
       </mesh>
     </group>
   );
@@ -1565,7 +1392,7 @@ function Walls() {
 // MAIN FACTORY CONTENT
 // ============================================
 
-function FactoryContent({ machines, onMachineSelect, cameraMode, playerRef }) {
+function FactoryContent({ machines, onMachineSelect, cameraMode, motorShutdown, valvesClosed, needsAttention, onMotorShutdown, onValveClose }) {
   return (
     <>
       <IndustrialLighting />
@@ -1573,48 +1400,27 @@ function FactoryContent({ machines, onMachineSelect, cameraMode, playerRef }) {
       
       <FactoryFloor />
       <Walls />
-      <PipeNetwork />
-      <ConveyorSystem />
       
-      {/* Robotic Arms */}
-      <RoboticArm position={[-10, 0, -4]} color="#f97316" speed={0.8} />
-      <RoboticArm position={[-4, 0, -4]} color="#f97316" speed={1.1} />
-      <RoboticArm position={[4, 0, -4]} color="#f97316" speed={0.9} />
-      <RoboticArm position={[10, 0, -4]} color="#f97316" speed={1.0} />
+      {/* Gas Pipe Network with leak detection */}
+      <GasPipeNetwork 
+        machines={machines}
+        valvesClosed={valvesClosed}
+        onValveClose={onValveClose}
+      />
       
-      {/* Safety Cages */}
-      <SafetyCage position={[-10, 0, -4]} width={2.8} depth={2.8} height={2.2} />
-      <SafetyCage position={[-4, 0, -4]} width={2.8} depth={2.8} height={2.2} />
-      <SafetyCage position={[4, 0, -4]} width={2.8} depth={2.8} height={2.2} />
-      <SafetyCage position={[10, 0, -4]} width={2.8} depth={2.8} height={2.2} />
+      {/* Pump Motor - dedicated visualization */}
+      {machines.length > 0 && (
+        <PumpMotor 
+          position={[-15, 0, 8]}
+          machine={machines[0]}
+          isShutdown={motorShutdown['pump-motor-1']}
+          onShutdown={() => onMotorShutdown('pump-motor-1')}
+        />
+      )}
       
       {/* Storage Tanks */}
-      <StorageTank position={[18, 0, 0]} height={5} radius={1.3} color="#22c55e" label="T-101" />
-      <StorageTank position={[21.5, 0, 0]} height={5} radius={1.3} color="#22c55e" label="T-102" />
-      <StorageTank position={[19.75, 0, -5]} height={4} radius={1} color="#0ea5e9" label="T-103" />
-      
-      {/* Control Panels */}
-      <ControlPanel position={[-18, 0, 8]} rotation={[0, 0, 0]} />
-      <ControlPanel position={[-15, 0, 8]} rotation={[0, 0, 0]} />
-      <ControlPanel position={[14, 0, -12]} rotation={[0, Math.PI, 0]} />
-      
-      {/* Electrical Cabinets */}
-      <ElectricalCabinet position={[-22, 0, -8]} />
-      <ElectricalCabinet position={[-22, 0, -5]} />
-      <ElectricalCabinet position={[-22, 0, -2]} />
-      
-      {/* Forklift */}
-      <Forklift position={[15, 0, 10]} rotation={[0, -0.5, 0]} />
-      
-      {/* Pallets */}
-      <PalletStack position={[18, 0, 8]} boxes={3} />
-      <PalletStack position={[20, 0, 8]} boxes={4} />
-      <PalletStack position={[19, 0, 10]} boxes={2} />
-      <PalletStack position={[-20, 0, 5]} boxes={3} />
-      <PalletStack position={[-18, 0, 5]} boxes={2} />
-      
-      {/* Tool Board */}
-      <ToolBoard position={[-22, 0, 3]} />
+      <StorageTank position={[18, 0, 0]} height={5} radius={1.3} color="#22c55e" />
+      <StorageTank position={[21.5, 0, 0]} height={5} radius={1.3} color="#22c55e" />
       
       {/* API-connected Machines */}
       {machines.map((machine) => {
@@ -1626,15 +1432,12 @@ function FactoryContent({ machines, onMachineSelect, cameraMode, playerRef }) {
             machine={machine}
             config={config}
             onSelect={onMachineSelect}
+            isShutdown={motorShutdown[machine.id]}
+            needsAttention={!!needsAttention[machine.id]}
+            onShutdown={() => onMotorShutdown(machine.id)}
           />
         );
       })}
-      
-      {/* Player Character - visible only in orbit mode */}
-      <PlayerCharacter 
-        position={[0, 0, 12]} 
-        visible={cameraMode === CAMERA_MODES.ORBIT} 
-      />
       
       {/* Camera Controllers */}
       {cameraMode === CAMERA_MODES.ORBIT && (
@@ -1650,14 +1453,8 @@ function FactoryContent({ machines, onMachineSelect, cameraMode, playerRef }) {
         />
       )}
       
-      <FirstPersonController 
-        isActive={cameraMode === CAMERA_MODES.WALK} 
-        playerRef={playerRef}
-      />
-      
-      <DroneController 
-        isActive={cameraMode === CAMERA_MODES.DRONE} 
-      />
+      <FirstPersonController isActive={cameraMode === CAMERA_MODES.WALK} />
+      <DroneController isActive={cameraMode === CAMERA_MODES.DRONE} />
     </>
   );
 }
@@ -1666,19 +1463,27 @@ function FactoryContent({ machines, onMachineSelect, cameraMode, playerRef }) {
 // MAIN EXPORT
 // ============================================
 
-export default function FactoryScene({ machines = [], onMachineSelect = () => {} }) {
+export default function FactoryScene({ 
+  machines = [], 
+  onMachineSelect = () => {},
+  motorShutdown = {},
+  valvesClosed = {},
+  needsAttention = {},
+  onMotorShutdown = () => {},
+  onValveClose = () => {},
+  onReset = () => {}
+}) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [cameraMode, setCameraMode] = useState(CAMERA_MODES.ORBIT);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
+  const [contextLost, setContextLost] = useState(false);
   const canvasRef = useRef(null);
-  const playerRef = useRef(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 50);
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle keyboard shortcuts for mode switching
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === 'Digit1' || e.code === 'Numpad1') {
@@ -1728,36 +1533,122 @@ export default function FactoryScene({ machines = [], onMachineSelect = () => {}
         justifyContent: 'center',
         background: '#0f172a',
         color: '#94a3b8',
-        fontFamily: 'system-ui'
       }}>
         Loading Factory...
       </div>
     );
   }
 
+  // Handle WebGL context lost
+  if (contextLost) {
+    return (
+      <div style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#0f172a',
+        color: '#94a3b8',
+        gap: 16
+      }}>
+        <span style={{ fontSize: 40 }}>⚠️</span>
+        <span>3D View temporarily unavailable</span>
+        <button 
+          onClick={() => { setContextLost(false); setIsLoaded(false); setTimeout(() => setIsLoaded(true), 100); }}
+          style={{
+            background: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: 8,
+            cursor: 'pointer'
+          }}
+        >
+          Reload 3D View
+        </button>
+      </div>
+    );
+  }
+
+  // Check for active alerts
+  const hasGasLeak = machines.some(m => m.temperature > 60 || m.vibration === 1);
+  const hasCriticalMachine = machines.some(m => m.failureRisk >= 70 || m.temperature > 70);
+
+  // Handle WebGL context loss/restore
+  const handleCreated = ({ gl }) => {
+    const canvas = gl.domElement;
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      console.warn('WebGL context lost');
+      setContextLost(true);
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      console.log('WebGL context restored');
+      setContextLost(false);
+    });
+  };
+
   return (
     <div 
       ref={canvasRef}
       onClick={handleCanvasClick}
-      style={{ width: '100%', height: '100%', background: '#0f172a', position: 'relative', cursor: cameraMode !== CAMERA_MODES.ORBIT ? 'crosshair' : 'auto' }}
+      style={{ width: '100%', height: '100%', background: '#0f172a', position: 'relative' }}
     >
       <Canvas
-        shadows
+        shadows="soft"
         camera={{ position: [20, 15, 25], fov: 50, near: 0.1, far: 150 }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+        gl={{ 
+          antialias: false,
+          powerPreference: 'default',
+          failIfMajorPerformanceCaveat: false,
+          preserveDrawingBuffer: false
+        }}
+        dpr={[1, 1.5]}
+        onCreated={handleCreated}
       >
         <FactoryContent 
           machines={machines} 
           onMachineSelect={onMachineSelect}
           cameraMode={cameraMode}
-          playerRef={playerRef}
+          motorShutdown={motorShutdown}
+          valvesClosed={valvesClosed}
+          needsAttention={needsAttention}
+          onMotorShutdown={onMotorShutdown}
+          onValveClose={onValveClose}
         />
       </Canvas>
+      
+      {/* Alert Banner */}
+      {(hasGasLeak || hasCriticalMachine) && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9))',
+          color: 'white',
+          padding: '8px 16px',
+          fontSize: 12,
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 16,
+          animation: 'pulse 2s infinite'
+        }}>
+          <span>⚠️ ALERTS:</span>
+          {hasGasLeak && <span>🔥 GAS LEAK DETECTED</span>}
+          {hasCriticalMachine && <span>🌡️ CRITICAL TEMPERATURE</span>}
+          <span style={{ fontSize: 10 }}>Check 3D view for actions</span>
+        </div>
+      )}
       
       {/* Camera Mode Toggle UI */}
       <div style={{
         position: 'absolute',
-        top: '12px',
+        top: hasGasLeak || hasCriticalMachine ? '50px' : '12px',
         left: '50%',
         transform: 'translateX(-50%)',
         display: 'flex',
@@ -1767,7 +1658,6 @@ export default function FactoryScene({ machines = [], onMachineSelect = () => {}
         padding: '6px',
         backdropFilter: 'blur(12px)',
         border: '1px solid #334155',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
       }}>
         {[
           { mode: CAMERA_MODES.ORBIT, label: 'Orbit', icon: '🔭', key: '1' },
@@ -1793,33 +1683,24 @@ export default function FactoryScene({ machines = [], onMachineSelect = () => {}
               cursor: 'pointer',
               fontSize: '12px',
               fontWeight: '500',
-              fontFamily: 'system-ui',
-              transition: 'all 0.2s ease',
               background: cameraMode === mode 
                 ? 'linear-gradient(135deg, #3b82f6, #2563eb)' 
                 : 'transparent',
               color: cameraMode === mode ? '#fff' : '#94a3b8',
-              boxShadow: cameraMode === mode ? '0 2px 8px rgba(59,130,246,0.4)' : 'none',
             }}
           >
-            <span style={{ fontSize: '14px' }}>{icon}</span>
+            <span>{icon}</span>
             <span>{label}</span>
-            <span style={{ 
-              fontSize: '9px', 
-              opacity: 0.6,
-              background: 'rgba(255,255,255,0.1)',
-              padding: '2px 5px',
-              borderRadius: '3px',
-            }}>{key}</span>
+            <span style={{ fontSize: '9px', opacity: 0.6 }}>{key}</span>
           </button>
         ))}
       </div>
       
-      {/* Controls Help - Context sensitive */}
+      {/* Controls Help */}
       {(cameraMode === CAMERA_MODES.WALK || cameraMode === CAMERA_MODES.DRONE) && (
         <div style={{
           position: 'absolute',
-          top: '70px',
+          top: hasGasLeak || hasCriticalMachine ? '110px' : '70px',
           left: '50%',
           transform: 'translateX(-50%)',
           background: isPointerLocked ? 'rgba(15, 23, 42, 0.85)' : 'rgba(59, 130, 246, 0.9)',
@@ -1827,31 +1708,15 @@ export default function FactoryScene({ machines = [], onMachineSelect = () => {}
           padding: '10px 16px',
           fontSize: '11px',
           color: '#fff',
-          backdropFilter: 'blur(8px)',
-          border: `1px solid ${isPointerLocked ? '#334155' : '#60a5fa'}`,
-          textAlign: 'center',
-          transition: 'all 0.3s ease',
         }}>
           {!isPointerLocked ? (
-            <div style={{ fontWeight: '600' }}>🖱️ Click to enable {cameraMode === CAMERA_MODES.WALK ? 'walking' : 'flying'} controls</div>
+            <div>🖱️ Click to enable controls</div>
           ) : (
-            <>
-              <div style={{ marginBottom: '4px', fontWeight: '600' }}>
-                {cameraMode === CAMERA_MODES.WALK ? '🚶 Walk Mode' : '🚁 Drone Mode'}
-              </div>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <span><b>WASD</b> Move</span>
-                <span><b>Mouse</b> Look</span>
-                <span><b>Shift</b> Sprint</span>
-                {cameraMode === CAMERA_MODES.DRONE && (
-                  <>
-                    <span><b>Space</b> Up</span>
-                    <span><b>Ctrl</b> Down</span>
-                  </>
-                )}
-                <span><b>ESC</b> Release</span>
-              </div>
-            </>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <span><b>WASD</b> Move</span>
+              <span><b>Mouse</b> Look</span>
+              <span><b>ESC</b> Release</span>
+            </div>
           )}
         </div>
       )}
@@ -1866,41 +1731,16 @@ export default function FactoryScene({ machines = [], onMachineSelect = () => {}
         padding: '10px 14px',
         fontSize: '11px',
         color: '#94a3b8',
-        backdropFilter: 'blur(8px)',
-        border: '1px solid #334155',
       }}>
-        <div style={{ fontWeight: '600', marginBottom: '6px', color: '#e2e8f0' }}>Digital Twin - Factory Floor</div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ fontWeight: '600', marginBottom: '6px', color: '#e2e8f0' }}>IoT Status Legend</div>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <span><span style={{ color: '#22c55e' }}>●</span> Normal</span>
           <span><span style={{ color: '#eab308' }}>●</span> Warning</span>
-          <span><span style={{ color: '#f97316' }}>●</span> Elevated</span>
+          <span><span style={{ color: '#f97316' }}>●</span> High Temp</span>
           <span><span style={{ color: '#ef4444' }}>●</span> Critical</span>
         </div>
         <div style={{ marginTop: '5px', fontSize: '10px', color: '#64748b' }}>
-          {cameraMode === CAMERA_MODES.ORBIT 
-            ? 'Drag to rotate • Scroll to zoom • Hover machines for data'
-            : 'Press 1 to return to orbit view • Hover machines for data'}
-        </div>
-      </div>
-      
-      {/* Mini-map hint */}
-      <div style={{
-        position: 'absolute',
-        bottom: '12px',
-        right: '12px',
-        background: 'rgba(15, 23, 42, 0.92)',
-        borderRadius: '8px',
-        padding: '8px 12px',
-        fontSize: '10px',
-        color: '#64748b',
-        backdropFilter: 'blur(8px)',
-        border: '1px solid #334155',
-      }}>
-        <div style={{ color: '#94a3b8', fontWeight: '600', marginBottom: '4px' }}>Quick Switch</div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <span style={{ color: cameraMode === CAMERA_MODES.ORBIT ? '#3b82f6' : '#64748b' }}>[1] Orbit</span>
-          <span style={{ color: cameraMode === CAMERA_MODES.WALK ? '#3b82f6' : '#64748b' }}>[2] Walk</span>
-          <span style={{ color: cameraMode === CAMERA_MODES.DRONE ? '#3b82f6' : '#64748b' }}>[3] Drone</span>
+          Real-time data from IoT sensors • Hover for details • Click alerts to take action
         </div>
       </div>
     </div>

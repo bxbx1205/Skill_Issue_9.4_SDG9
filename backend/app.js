@@ -34,49 +34,78 @@ const MAX_LOGS = 5; // Maximum logs to store
 
 // ==================== DATA STORAGE ====================
 
-// Real sensor data from Arduino (Motor A)
+// Real sensor data from Arduino/IoT
 let realSensorData = {
-  temperature: 25.0,
-  vibration: 0,
+  temperature: 25.0,   // TEMP sensor
+  vibration: 0,        // VIB sensor (raw value)
+  humidity: 50.0,      // HUM sensor
+  gasLevel: 100.0,     // GAS sensor
+  distance: 0,         // DIST sensor
   lastUpdate: Date.now()
 };
 
-// Fleet machines data
+// Fleet machines data - Each machine controlled by a DIFFERENT sensor
 let fleetData = {
-  motorA: {
-    id: 'motor-a',
-    name: 'Motor A',
+  // Vibration Motor - Controlled by VIB sensor
+  vibrationMotor: {
+    id: 'vibration-motor',
+    name: 'Vibration Motor',
     type: 'Industrial Motor',
     icon: '⚙️',
-    dataSource: 'Real Sensor',
+    dataSource: 'VIB Sensor',
+    sensorType: 'VIB',
     temperature: 25.0,
     vibration: 0,
+    sensorValue: 0,
     healthScore: 100,
     failureRisk: 0,
     status: 'Healthy',
     lastUpdate: Date.now()
   },
-  pumpB: {
-    id: 'pump-b',
-    name: 'Pump B',
-    type: 'Hydraulic Pump',
-    icon: '💧',
-    dataSource: 'Simulated',
-    temperature: 28.0,
+  // Temperature Pump - Controlled by TEMP sensor
+  tempPump: {
+    id: 'temp-pump',
+    name: 'Thermal Pump',
+    type: 'Heat Exchange Pump',
+    icon: '🌡️',
+    dataSource: 'TEMP Sensor',
+    sensorType: 'TEMP',
+    temperature: 25.0,
     vibration: 0,
+    sensorValue: 25.0,
     healthScore: 100,
     failureRisk: 0,
     status: 'Healthy',
     lastUpdate: Date.now()
   },
-  compressorC: {
-    id: 'compressor-c',
-    name: 'Compressor C',
+  // Humidity Compressor - Controlled by HUM sensor
+  humidityCompressor: {
+    id: 'humidity-compressor',
+    name: 'Humidity Controller',
     type: 'Air Compressor',
-    icon: '🌀',
-    dataSource: 'Simulated',
-    temperature: 30.0,
+    icon: '💧',
+    dataSource: 'HUM Sensor',
+    sensorType: 'HUM',
+    temperature: 25.0,
     vibration: 0,
+    sensorValue: 50.0,
+    healthScore: 100,
+    failureRisk: 0,
+    status: 'Healthy',
+    lastUpdate: Date.now()
+  },
+  // Gas Detector - Controlled by GAS sensor
+  gasDetector: {
+    id: 'gas-detector',
+    name: 'Gas Detector',
+    type: 'Gas Pipeline Monitor',
+    icon: '🔥',
+    dataSource: 'GAS Sensor',
+    sensorType: 'GAS',
+    temperature: 25.0,
+    vibration: 0,
+    sensorValue: 100.0,
+    gasLevel: 100.0,
     healthScore: 100,
     failureRisk: 0,
     status: 'Healthy',
@@ -220,80 +249,146 @@ function checkAndGenerateAlerts(machine, previousRisk) {
 // ==================== MACHINE UPDATE FUNCTIONS ====================
 
 /**
- * Update Motor A with real sensor data
+ * Calculate health and risk for VIB sensor
+ * Vibration > 1.5 = abnormal, > 2.5 = critical
  */
-function updateMotorA() {
-  const previousRisk = fleetData.motorA.failureRisk;
-  
-  fleetData.motorA.temperature = realSensorData.temperature;
-  fleetData.motorA.vibration = realSensorData.vibration;
-  fleetData.motorA.healthScore = calculateHealthScore(
-    fleetData.motorA.temperature,
-    fleetData.motorA.vibration
-  );
-  fleetData.motorA.failureRisk = calculateFailureRisk(fleetData.motorA.healthScore);
-  fleetData.motorA.status = getStatus(fleetData.motorA.failureRisk);
-  fleetData.motorA.statusColor = getStatusColor(fleetData.motorA.status);
-  fleetData.motorA.lastUpdate = Date.now();
-  
-  checkAndGenerateAlerts(fleetData.motorA, previousRisk);
+function calculateVibrationHealth(vibValue) {
+  if (vibValue > 2.5) return { health: 20, risk: 80, status: 'Critical' };
+  if (vibValue > 2.0) return { health: 40, risk: 60, status: 'Warning' };
+  if (vibValue > 1.5) return { health: 60, risk: 40, status: 'Caution' };
+  if (vibValue > 1.0) return { health: 80, risk: 20, status: 'Healthy' };
+  return { health: 100, risk: 0, status: 'Healthy' };
 }
 
 /**
- * Simulate Pump B data (slightly varies from Motor A)
+ * Calculate health and risk for TEMP sensor
+ * Temp > 50 = warning, > 70 = critical
  */
-function updatePumpB() {
-  const previousRisk = fleetData.pumpB.failureRisk;
-  
-  // Base on real data with variations
-  const baseTemp = realSensorData.temperature;
-  const variation = (Math.random() - 0.5) * 10; // ±5°C variation
-  
-  fleetData.pumpB.temperature = Math.max(20, Math.min(80, baseTemp + variation + 3));
-  fleetData.pumpB.vibration = Math.random() > 0.85 ? 1 : realSensorData.vibration;
-  fleetData.pumpB.healthScore = calculateHealthScore(
-    fleetData.pumpB.temperature,
-    fleetData.pumpB.vibration
-  );
-  fleetData.pumpB.failureRisk = calculateFailureRisk(fleetData.pumpB.healthScore);
-  fleetData.pumpB.status = getStatus(fleetData.pumpB.failureRisk);
-  fleetData.pumpB.statusColor = getStatusColor(fleetData.pumpB.status);
-  fleetData.pumpB.lastUpdate = Date.now();
-  
-  checkAndGenerateAlerts(fleetData.pumpB, previousRisk);
+function calculateTempHealth(tempValue) {
+  if (tempValue > 70) return { health: 15, risk: 85, status: 'Critical' };
+  if (tempValue > 60) return { health: 35, risk: 65, status: 'Warning' };
+  if (tempValue > 50) return { health: 55, risk: 45, status: 'Caution' };
+  if (tempValue > 40) return { health: 75, risk: 25, status: 'Healthy' };
+  return { health: 100, risk: 0, status: 'Healthy' };
 }
 
 /**
- * Simulate Compressor C data (slightly varies from Motor A)
+ * Calculate health and risk for HUM sensor
+ * Humidity < 30 or > 70 = warning, < 20 or > 80 = critical
  */
-function updateCompressorC() {
-  const previousRisk = fleetData.compressorC.failureRisk;
-  
-  // Base on real data with variations
-  const baseTemp = realSensorData.temperature;
-  const variation = (Math.random() - 0.5) * 8; // ±4°C variation
-  
-  fleetData.compressorC.temperature = Math.max(22, Math.min(75, baseTemp + variation - 2));
-  fleetData.compressorC.vibration = Math.random() > 0.9 ? 1 : 0;
-  fleetData.compressorC.healthScore = calculateHealthScore(
-    fleetData.compressorC.temperature,
-    fleetData.compressorC.vibration
-  );
-  fleetData.compressorC.failureRisk = calculateFailureRisk(fleetData.compressorC.healthScore);
-  fleetData.compressorC.status = getStatus(fleetData.compressorC.failureRisk);
-  fleetData.compressorC.statusColor = getStatusColor(fleetData.compressorC.status);
-  fleetData.compressorC.lastUpdate = Date.now();
-  
-  checkAndGenerateAlerts(fleetData.compressorC, previousRisk);
+function calculateHumidityHealth(humValue) {
+  if (humValue < 20 || humValue > 80) return { health: 20, risk: 80, status: 'Critical' };
+  if (humValue < 30 || humValue > 70) return { health: 50, risk: 50, status: 'Warning' };
+  if (humValue < 35 || humValue > 65) return { health: 70, risk: 30, status: 'Caution' };
+  return { health: 100, risk: 0, status: 'Healthy' };
 }
 
 /**
- * Update all fleet machines
+ * Calculate health and risk for GAS sensor
+ * Gas > 300 = leak detected, > 500 = critical leak
+ */
+function calculateGasHealth(gasValue) {
+  if (gasValue > 500) return { health: 10, risk: 90, status: 'Critical' };
+  if (gasValue > 300) return { health: 30, risk: 70, status: 'Warning' };
+  if (gasValue > 200) return { health: 60, risk: 40, status: 'Caution' };
+  if (gasValue > 150) return { health: 80, risk: 20, status: 'Healthy' };
+  return { health: 100, risk: 0, status: 'Healthy' };
+}
+
+/**
+ * Update Vibration Motor with VIB sensor data
+ */
+function updateVibrationMotor() {
+  const previousRisk = fleetData.vibrationMotor.failureRisk;
+  const vibValue = realSensorData.vibration;
+  
+  const { health, risk, status } = calculateVibrationHealth(vibValue);
+  
+  fleetData.vibrationMotor.sensorValue = vibValue;
+  fleetData.vibrationMotor.temperature = 25 + (vibValue * 10); // Correlate temp with vibration
+  fleetData.vibrationMotor.vibration = vibValue > 1.5 ? 1 : 0;
+  fleetData.vibrationMotor.healthScore = health;
+  fleetData.vibrationMotor.failureRisk = risk;
+  fleetData.vibrationMotor.status = status;
+  fleetData.vibrationMotor.statusColor = getStatusColor(status);
+  fleetData.vibrationMotor.lastUpdate = Date.now();
+  
+  checkAndGenerateAlerts(fleetData.vibrationMotor, previousRisk);
+}
+
+/**
+ * Update Thermal Pump with TEMP sensor data
+ */
+function updateTempPump() {
+  const previousRisk = fleetData.tempPump.failureRisk;
+  const tempValue = realSensorData.temperature;
+  
+  const { health, risk, status } = calculateTempHealth(tempValue);
+  
+  fleetData.tempPump.sensorValue = tempValue;
+  fleetData.tempPump.temperature = tempValue;
+  fleetData.tempPump.vibration = tempValue > 60 ? 1 : 0; // High temp causes vibration
+  fleetData.tempPump.healthScore = health;
+  fleetData.tempPump.failureRisk = risk;
+  fleetData.tempPump.status = status;
+  fleetData.tempPump.statusColor = getStatusColor(status);
+  fleetData.tempPump.lastUpdate = Date.now();
+  
+  checkAndGenerateAlerts(fleetData.tempPump, previousRisk);
+}
+
+/**
+ * Update Humidity Controller with HUM sensor data
+ */
+function updateHumidityCompressor() {
+  const previousRisk = fleetData.humidityCompressor.failureRisk;
+  const humValue = realSensorData.humidity;
+  
+  const { health, risk, status } = calculateHumidityHealth(humValue);
+  
+  fleetData.humidityCompressor.sensorValue = humValue;
+  fleetData.humidityCompressor.temperature = 25 + Math.abs(humValue - 50) * 0.5; // Temp varies with humidity deviation
+  fleetData.humidityCompressor.vibration = (humValue < 30 || humValue > 70) ? 1 : 0;
+  fleetData.humidityCompressor.humidity = humValue;
+  fleetData.humidityCompressor.healthScore = health;
+  fleetData.humidityCompressor.failureRisk = risk;
+  fleetData.humidityCompressor.status = status;
+  fleetData.humidityCompressor.statusColor = getStatusColor(status);
+  fleetData.humidityCompressor.lastUpdate = Date.now();
+  
+  checkAndGenerateAlerts(fleetData.humidityCompressor, previousRisk);
+}
+
+/**
+ * Update Gas Detector with GAS sensor data
+ */
+function updateGasDetector() {
+  const previousRisk = fleetData.gasDetector.failureRisk;
+  const gasValue = realSensorData.gasLevel;
+  
+  const { health, risk, status } = calculateGasHealth(gasValue);
+  
+  fleetData.gasDetector.sensorValue = gasValue;
+  fleetData.gasDetector.gasLevel = gasValue;
+  fleetData.gasDetector.temperature = 25 + (gasValue > 300 ? (gasValue - 300) * 0.1 : 0); // Gas leak may cause heat
+  fleetData.gasDetector.vibration = gasValue > 300 ? 1 : 0; // Leak triggers vibration alert
+  fleetData.gasDetector.healthScore = health;
+  fleetData.gasDetector.failureRisk = risk;
+  fleetData.gasDetector.status = status;
+  fleetData.gasDetector.statusColor = getStatusColor(status);
+  fleetData.gasDetector.lastUpdate = Date.now();
+  
+  checkAndGenerateAlerts(fleetData.gasDetector, previousRisk);
+}
+
+/**
+ * Update all fleet machines with their respective sensor data
  */
 function updateFleet() {
-  updateMotorA();
-  updatePumpB();
-  updateCompressorC();
+  updateVibrationMotor();
+  updateTempPump();
+  updateHumidityCompressor();
+  updateGasDetector();
 }
 
 // ==================== SERIAL PORT SETUP ====================
@@ -387,24 +482,17 @@ async function setupSerialPort() {
 let simulationInterval = null;
 
 function startSimulationMode() {
-  console.log('🔄 Running in SIMULATION MODE');
-  console.log('   Generating synthetic sensor data...');
+  console.log('🔄 Running in REAL DATA MODE');
+  console.log('   Waiting for IoT sensor data via POST /api/iot-data');
+  console.log('   Expected format: { VIB: 0.83, TEMP: 29.3, HUM: 46.0, GAS: 143.0 }');
+  console.log('   Each sensor controls a different machine:');
+  console.log('   - VIB → Vibration Motor');
+  console.log('   - TEMP → Thermal Pump');
+  console.log('   - HUM → Humidity Controller');
+  console.log('   - GAS → Gas Detector');
   
-  // Simulate sensor data updates
-  simulationInterval = setInterval(() => {
-    // Simulate temperature fluctuations (20-70°C range)
-    const timeComponent = Math.sin(Date.now() / 10000) * 15; // Slow wave
-    const noise = (Math.random() - 0.5) * 5; // Random noise
-    realSensorData.temperature = Math.max(20, Math.min(70, 35 + timeComponent + noise));
-    
-    // Simulate occasional vibration events
-    realSensorData.vibration = Math.random() > 0.9 ? 1 : 0;
-    realSensorData.lastUpdate = Date.now();
-    
-    // Update fleet
-    updateFleet();
-    
-  }, 1000);
+  // Initialize fleet with default safe values (waiting for real data)
+  updateFleet();
 }
 
 // ==================== REST API ENDPOINTS ====================
@@ -416,15 +504,20 @@ function startSimulationMode() {
 app.get('/api/fleet', (req, res) => {
   // Get fleet array sorted by failure risk (highest first)
   const machines = [
-    fleetData.motorA,
-    fleetData.pumpB,
-    fleetData.compressorC
+    fleetData.vibrationMotor,
+    fleetData.tempPump,
+    fleetData.humidityCompressor,
+    fleetData.gasDetector
   ].map(machine => ({
     ...machine,
     temperatureFormatted: `${machine.temperature.toFixed(1)}°C`,
     healthScoreFormatted: `${machine.healthScore.toFixed(1)}%`,
     failureRiskFormatted: `${machine.failureRisk.toFixed(1)}%`,
-    vibrationStatus: machine.vibration === 1 ? 'Detected' : 'Normal'
+    vibrationStatus: machine.vibration === 1 ? 'Detected' : 'Normal',
+    sensorValueFormatted: machine.sensorType === 'GAS' ? `${machine.sensorValue.toFixed(0)} ppm` :
+                          machine.sensorType === 'HUM' ? `${machine.sensorValue.toFixed(1)}%` :
+                          machine.sensorType === 'TEMP' ? `${machine.sensorValue.toFixed(1)}°C` :
+                          `${machine.sensorValue.toFixed(2)}`
   }));
   
   // Sort by failure risk for ranking
@@ -508,39 +601,58 @@ app.get('/api/logs', (req, res) => {
 /**
  * POST /api/iot-data
  * Receive real sensor data from read_arduino.py (Raspberry Pi)
- * Expected payload: { VIB: 1.05, TEMP: 28.9, HUM: 47, GAS: 58, DIST: 4.56 }
+ * Expected payload: { VIB: 0.83, TEMP: 29.3, HUM: 46.0, GAS: 143.0 }
+ * Each sensor controls a different industrial machine:
+ * - VIB -> Vibration Motor
+ * - TEMP -> Thermal Pump
+ * - HUM -> Humidity Controller
+ * - GAS -> Gas Detector
  */
 app.post('/api/iot-data', (req, res) => {
   try {
     const { VIB, TEMP, HUM, GAS, DIST } = req.body;
     
-    // Update real sensor data from Arduino
+    // Update all sensor data from IoT device
+    if (VIB !== undefined) {
+      realSensorData.vibration = parseFloat(VIB);
+    }
     if (TEMP !== undefined) {
       realSensorData.temperature = parseFloat(TEMP);
     }
-    if (VIB !== undefined) {
-      // Convert vibration value to binary (0/1) based on threshold
-      realSensorData.vibration = parseFloat(VIB) > 1.5 ? 1 : 0;
+    if (HUM !== undefined) {
+      realSensorData.humidity = parseFloat(HUM);
     }
-    realSensorData.lastUpdate = Date.now();
+    if (GAS !== undefined) {
+      realSensorData.gasLevel = parseFloat(GAS);
+    }
+    if (DIST !== undefined) {
+      realSensorData.distance = parseFloat(DIST);
+    }
     
-    // Store additional sensor data
-    realSensorData.humidity = HUM !== undefined ? parseFloat(HUM) : null;
-    realSensorData.gasLevel = GAS !== undefined ? parseFloat(GAS) : null;
-    realSensorData.distance = DIST !== undefined ? parseFloat(DIST) : null;
+    realSensorData.lastUpdate = Date.now();
     
     // Mark as receiving real data
     serialConnected = true;
     
-    // Update fleet with new data
+    // Update all fleet machines with their respective sensor data
     updateFleet();
     
-    console.log(`📡 IoT Data: TEMP=${TEMP}°C, VIB=${VIB}, HUM=${HUM}%, GAS=${GAS}, DIST=${DIST}cm`);
+    console.log(`📡 IoT Data Received:`);
+    console.log(`   VIB=${VIB} → Vibration Motor`);
+    console.log(`   TEMP=${TEMP}°C → Thermal Pump`);
+    console.log(`   HUM=${HUM}% → Humidity Controller`);
+    console.log(`   GAS=${GAS} ppm → Gas Detector`);
     
     res.json({
       success: true,
-      message: 'Sensor data received',
-      timestamp: new Date().toISOString()
+      message: 'Sensor data received and machines updated',
+      timestamp: new Date().toISOString(),
+      machineStatus: {
+        vibrationMotor: fleetData.vibrationMotor.status,
+        tempPump: fleetData.tempPump.status,
+        humidityCompressor: fleetData.humidityCompressor.status,
+        gasDetector: fleetData.gasDetector.status
+      }
     });
   } catch (error) {
     console.error('Error processing IoT data:', error.message);
