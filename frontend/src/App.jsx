@@ -14,6 +14,7 @@ import AlertsPanel from './components/AlertsPanel';
 import RiskRanking from './components/RiskRanking';
 import EventLogs from './components/EventLogs';
 import FleetStats from './components/FleetStats';
+import FactoryScene from './components/FactoryScene';
 import './App.css';
 
 // API Configuration
@@ -174,6 +175,19 @@ function App() {
                 isTopRisk={machine.id === topRiskMachineId}
               />
             ))}
+          </div>
+        </section>
+
+        {/* 3D Factory Scene */}
+        <section className="factory-scene-section">
+          <h2 className="section-title">
+            <span>🏭</span> 3D Factory View
+          </h2>
+          <div className="factory-scene-container" style={{ height: '500px', borderRadius: '12px', overflow: 'hidden' }}>
+            <FactoryScene 
+              machines={fleetData?.machines || []}
+              onMachineSelect={(machine) => console.log('Selected:', machine)}
+            />
           </div>
         </section>
 
