@@ -302,6 +302,14 @@ let serialPort = null;
 let parser = null;
 
 async function setupSerialPort() {
+  // Skip serial port setup on Vercel (serverless environment)
+  if (process.env.VERCEL || process.env.SERVERLESS) {
+    console.log('☁️  Running on Vercel - Serial port disabled');
+    console.log('   Waiting for IoT data via POST /api/iot-data');
+    startSimulationMode();
+    return;
+  }
+  
   try {
     // Dynamically import serialport (ES module)
     const { SerialPort } = await import('serialport');
@@ -498,6 +506,115 @@ app.get('/api/logs', (req, res) => {
 });
 
 /**
+ * POST /api/iot-data
+ * Receive real sensor data from read_arduino.py (Raspberry Pi)
+ * Expected payload: { VIB: 1.05, TEMP: 28.9, HUM: 47, GAS: 58, DIST: 4.56 }
+ */
+app.post('/api/iot-data', (req, res) => {
+  try {
+    const { VIB, TEMP, HUM, GAS, DIST } = req.body;
+    
+    // Update real sensor data from Arduino
+    if (TEMP !== undefined) {
+      realSensorData.temperature = parseFloat(TEMP);
+    }
+    if (VIB !== undefined) {
+      // Convert vibration value to binary (0/1) based on threshold
+      realSensorData.vibration = parseFloat(VIB) > 1.5 ? 1 : 0;
+    }
+    realSensorData.lastUpdate = Date.now();
+    
+    // Store additional sensor data
+    realSensorData.humidity = HUM !== undefined ? parseFloat(HUM) : null;
+    realSensorData.gasLevel = GAS !== undefined ? parseFloat(GAS) : null;
+    realSensorData.distance = DIST !== undefined ? parseFloat(DIST) : null;
+    
+    // Mark as receiving real data
+    serialConnected = true;
+    
+    // Update fleet with new data
+    updateFleet();
+    
+    console.log(`📡 IoT Data: TEMP=${TEMP}°C, VIB=${VIB}, HUM=${HUM}%, GAS=${GAS}, DIST=${DIST}cm`);
+    
+    res.json({
+      success: true,
+      message: 'Sensor data received',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error processing IoT data:', error.message);
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/iot-data
+ * Receive sensor data from read_arduino.py (Python IoT bridge)
+ * Expects: { VIB: number, TEMP: number, HUM?: number, GAS?: number, DIST?: number }
+ */
+app.post('/api/iot-data', (req, res) => {
+  try {
+    const { VIB, TEMP, HUM, GAS, DIST } = req.body;
+    
+    // Validate required fields
+    if (TEMP === undefined || VIB === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: TEMP and VIB'
+      });
+    }
+    
+    // Update real sensor data
+    realSensorData.temperature = parseFloat(TEMP);
+    realSensorData.vibration = parseFloat(VIB) > 0.5 ? 1 : 0; // Threshold for vibration detection
+    realSensorData.lastUpdate = Date.now();
+    
+    // Store additional sensor data if provided
+    if (HUM !== undefined) realSensorData.humidity = parseFloat(HUM);
+    if (GAS !== undefined) realSensorData.gasLevel = parseFloat(GAS);
+    if (DIST !== undefined) realSensorData.distance = parseFloat(DIST);
+    
+    // Mark as connected (not simulation)
+    serialConnected = true;
+    
+    // Stop simulation if running
+    if (simulationInterval) {
+      clearInterval(simulationInterval);
+      simulationInterval = null;
+      console.log('✅ Switched from simulation to live IoT data');
+    }
+    
+    // Update fleet with new sensor data
+    updateFleet();
+    
+    console.log(`📡 IoT Data: Temp=${TEMP}°C, Vib=${VIB}, Hum=${HUM || 'N/A'}%, Gas=${GAS || 'N/A'}, Dist=${DIST || 'N/A'}cm`);
+    
+    res.json({
+      success: true,
+      message: 'Sensor data received',
+      data: {
+        temperature: realSensorData.temperature,
+        vibration: realSensorData.vibration,
+        humidity: realSensorData.humidity,
+        gasLevel: realSensorData.gasLevel,
+        distance: realSensorData.distance,
+        timestamp: realSensorData.lastUpdate
+      }
+    });
+  } catch (error) {
+    console.error('Error processing IoT data:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
  * POST /api/test-alert
  * Generate a test alert (for demo purposes)
  */
@@ -531,6 +648,7 @@ app.get('/', (req, res) => {
       '/api/fleet': 'GET - Fleet machine data, health scores, and logs',
       '/api/health': 'GET - Server health check',
       '/api/logs': 'GET - Alert logs only',
+      '/api/iot-data': 'POST - Receive sensor data from Arduino/Python bridge',
       '/api/test-alert': 'POST - Generate test alert'
     },
     serialPort: SERIAL_PORT_PATH,

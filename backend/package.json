@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
+    "vercel-build": "echo 'No build step needed'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["iot", "industry4.0", "predictive-maintenance", "arduino", "raspberry-pi"],
@@ -15,11 +16,16 @@
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1",
+    "express": "^5.2.1"
+  },
+  "optionalDependencies": {
     "serialport": "^12.0.0",
     "@serialport/parser-readline": "^12.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -2,12 +2,19 @@ import serial
 import time
 import requests
 import sys
+import os
 
 # ================= CONFIG =================
-SERIAL_PORT = "/dev/ttyACM0"   # change to ttyUSB0 if needed
+# Serial port: Update based on your system
+# Windows: "COM3", "COM4", etc.
+# Linux/Raspberry Pi: "/dev/ttyACM0", "/dev/ttyUSB0"
+SERIAL_PORT = os.environ.get("SERIAL_PORT", "/dev/ttyACM0")
 BAUD_RATE = 9600
 
-BACKEND_URL = "https://YOUR_PUBLIC_BACKEND_URL/api/iot-data"
+# Backend URL: Set via environment variable or update here
+# For local: "http://localhost:3000/api/iot-data"
+# For Vercel: "https://your-backend.vercel.app/api/iot-data"
+BACKEND_URL = os.environ.get("BACKEND_URL", "https://cih-backend.vercel.app/api/iot-data")
 # ==========================================
 
 
