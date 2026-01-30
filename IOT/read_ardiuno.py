@@ -14,7 +14,7 @@ BAUD_RATE = 9600
 # Backend URL: Set via environment variable or update here
 # For local: "http://localhost:3000/api/iot-data"
 # For Vercel: "https://your-backend.vercel.app/api/iot-data"
-BACKEND_URL = os.environ.get("BACKEND_URL", "https://cih-backend.vercel.app/api/iot-data")
+BACKEND_URL = os.environ.get("BACKEND_URL", "https://skill-issue-9-4-sdg-9.vercel.app/")
 # ==========================================
 
 
