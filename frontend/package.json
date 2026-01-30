@@ -1,8 +1,9 @@
 {
-  "name": "frontend",
+  "name": "predictive-maintenance-dashboard",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Industry 4.0 Predictive Maintenance Dashboard - PS 9.4 SDG 9",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

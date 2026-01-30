@@ -1,21 +1,23 @@
 {
-  "name": "backend",
+  "name": "predictive-maintenance-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Industry 4.0 Predictive Maintenance System - PS 9.4 SDG 9",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["iot", "industry4.0", "predictive-maintenance", "arduino", "raspberry-pi"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "serialport": "^12.0.0",
+    "@serialport/parser-readline": "^12.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
