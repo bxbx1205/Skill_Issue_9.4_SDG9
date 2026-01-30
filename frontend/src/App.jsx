@@ -34,6 +34,7 @@ import RiskRanking from './components/RiskRanking';
 import EventLogs from './components/EventLogs';
 import FleetStats from './components/FleetStats';
 import FactoryScene from './components/FactoryScene';
+import DataRecorder from './components/DataRecorder';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -45,6 +46,7 @@ function App() {
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [rateLimited, setRateLimited] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const intervalRef = useRef(null);
   const backoffRef = useRef(REFRESH_INTERVAL);
 
@@ -192,6 +194,22 @@ function App() {
                 size="small"
                 sx={{ bgcolor: fleetData?.simulationMode ? 'rgba(255,255,255,0.2)' : undefined, color: fleetData?.simulationMode ? 'white' : undefined }}
               />
+              {isRecording && (
+                <Chip
+                  label="● REC"
+                  size="small"
+                  sx={{ 
+                    bgcolor: 'error.main', 
+                    color: 'white',
+                    fontWeight: 700,
+                    animation: 'pulse 1s infinite',
+                    '@keyframes pulse': {
+                      '0%, 100%': { opacity: 1 },
+                      '50%': { opacity: 0.6 },
+                    },
+                  }}
+                />
+              )}
               {lastUpdate && (
                 <Typography variant="caption" sx={{ opacity: 0.8 }}>
                   Updated: {lastUpdate.toLocaleTimeString()}
@@ -206,6 +224,15 @@ function App() {
 
         {/* Main Content */}
         <Container maxWidth="xl" sx={{ py: 3 }}>
+          {/* Data Recorder */}
+          <Box sx={{ mb: 3 }}>
+            <DataRecorder 
+              fleetData={fleetData}
+              isRecording={isRecording}
+              onRecordingChange={setIsRecording}
+            />
+          </Box>
+
           {/* Fleet Statistics */}
           {fleetData?.fleetStats && (
             <Box sx={{ mb: 3 }}>
