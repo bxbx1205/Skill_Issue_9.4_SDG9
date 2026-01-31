@@ -298,7 +298,7 @@ function checkAndGenerateAlerts(machine, previousRisk) {
     if (!recentVibrationAlert) {
       generateAlert(
         machine,
-        `AbnoRmal vibration detected - Check mechanical components`,
+        `AbnoRmAl vibration detected - Check mechanical components`,
         'WARNING'
       );
     }
